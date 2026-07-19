@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for, send_file
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import secrets
@@ -10,6 +12,19 @@ app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
 
 # CSRF 保护
 csrf = CSRFProtect(app)
+
+# 登录限流 key 函数：只对 POST 请求计数，GET 不计数
+def login_limit_key():
+    if request.method == "GET":
+        return None  # GET 请求不计入限流
+    return get_remote_address()
+
+# 频率限制
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    storage_uri="memory://",
+)
 
 # 用户数据库 - 密码经过哈希存储，不再使用明文
 USERS = {
@@ -49,6 +64,7 @@ def index():
 
 
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute", key_func=login_limit_key)
 def login():
     error = None
     if request.method == "POST":

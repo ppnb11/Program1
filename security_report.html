@@ -69,7 +69,7 @@
                 <div class="stat-label">🔴 高危漏洞</div>
             </div>
             <div class="stat-card mid">
-                <div class="stat-number">3</div>
+                <div class="stat-number">4</div>
                 <div class="stat-label">🟡 中危漏洞</div>
             </div>
             <div class="stat-card low">
@@ -77,7 +77,7 @@
                 <div class="stat-label">🟢 低危漏洞</div>
             </div>
             <div class="stat-card all">
-                <div class="stat-number">7</div>
+                <div class="stat-number">8</div>
                 <div class="stat-label">✅ 全部修复</div>
             </div>
         </div>
@@ -146,6 +146,13 @@
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
                     <td><code>debug=True</code> 改为由环境变量 <code>FLASK_DEBUG</code> 控制，生产环境默认关闭，避免 Debugger PIN 暴露导致远程代码执行风险。</td>
                 </tr>
+                <tr>
+                    <td>8</td>
+                    <td><strong>登录接口无频率限制（可爆破）</strong></td>
+                    <td><span class="severity-tag severity-mid">🟡 中危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>引入 <code>flask_limiter</code> 库，对登录接口限制为 <strong>每分钟最多 5 次</strong> 尝试，超出后返回 HTTP 429 Too Many Requests，爆破工具无法继续。</td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -190,6 +197,22 @@
         <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">📄 删除调试注释（login.html）</h3>
         <pre><code><span class="diff-remove">- &lt;!-- 调试信息 - 默认管理员账号 用户名: admin 密码: admin123 --&gt;</span>
 <span class="diff-add">+ &lt;!-- 已删除 --&gt;</span></code></pre>
+
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">⏱️ 登录频率限制（app.py）</h3>
+        <pre><code><span class="diff-add">+ from flask_limiter import Limiter</span>
+<span class="diff-add">+ from flask_limiter.util import get_remote_address</span>
+<span class="diff-add">+ </span>
+<span class="diff-add">+ # 关键函数：仅对 POST 登录请求计数，GET 获取页面不计数</span>
+<span class="diff-add">+ def login_limit_key():</span>
+<span class="diff-add">+     if request.method == "GET":</span>
+<span class="diff-add">+         return None  # 不计入限流</span>
+<span class="diff-add">+     return get_remote_address()</span>
+<span class="diff-add">+ </span>
+<span class="diff-add">+ limiter = Limiter(app=app, key_func=get_remote_address, storage_uri="memory://")</span>
+<span class="diff-add">+ </span>
+<span class="diff-add">+ @app.route("/login", methods=["GET", "POST"])</span>
+<span class="diff-add">+ @limiter.limit("5 per minute", key_func=login_limit_key)  # 每分钟最多 5 次 POST 尝试</span>
+<span class="diff-add">+ def login():</span></code></pre>
     </div>
 
     <!-- Test Verification -->
@@ -214,6 +237,7 @@
                 <tr><td>7</td><td>无 CSRF Token 被拒绝</td><td>400</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
                 <tr><td>8</td><td>密码哈希存储</td><td>已哈希</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
                 <tr><td>9</td><td>Secret Key 非硬编码</td><td>环境变量</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>连续登录 5 次后第 6 次被限流</td><td>429</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
             </tbody>
         </table>
     </div>
@@ -226,7 +250,7 @@
                 <tr><th>文件</th><th>路径</th><th>修改内容</th></tr>
             </thead>
             <tbody>
-                <tr><td>🐍 app.py</td><td><code>/opt/Class01/app.py</code></td><td>密码哈希、Secret Key 环境变量、CSRF 保护、Debug 模式控制、用户信息脱敏</td></tr>
+                <tr><td>🐍 app.py</td><td><code>/opt/Class01/app.py</code></td><td>密码哈希、Secret Key 环境变量、CSRF 保护、Debug 模式控制、用户信息脱敏、登录频率限制</td></tr>
                 <tr><td>📄 login.html</td><td><code>/opt/Class01/templates/login.html</code></td><td>删除调试注释、添加 CSRF Token 隐藏字段</td></tr>
                 <tr><td>📄 index.html</td><td><code>/opt/Class01/templates/index.html</code></td><td>删除密码字段渲染</td></tr>
             </tbody>
@@ -257,7 +281,8 @@
             <li><span class="time">2026-07-19 03:05</span><div class="desc">🛡️ 修复 #5 — 引入 Flask-WTF CSRF 保护</div></li>
             <li><span class="time">2026-07-19 03:06</span><div class="desc">🔒 修复 #6 — 实现权限校验基础框架</div></li>
             <li><span class="time">2026-07-19 03:07</span><div class="desc">🐛 修复 #7 — Debug 模式由环境变量控制</div></li>
-            <li><span class="time">2026-07-19 03:08</span><div class="desc">🧪 全面测试 — 9 项测试全部通过 ✅</div></li>
+            <li><span class="time">2026-07-19 03:08</span><div class="desc">⏱️ 修复 #8 — 登录接口加入频率限制（flask-limiter，每分钟5次）</div></li>
+            <li><span class="time">2026-07-19 03:09</span><div class="desc">🧪 全面测试 — 10 项测试全部通过 ✅</div></li>
         </ul>
     </div>
 
