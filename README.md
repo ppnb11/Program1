@@ -22,8 +22,8 @@ cd /opt/Class01
 python3 app.py
 ```
 
-访问 http://localhost:5000
+访问 http://192.168.57.137:5000
 
 ## 安全修复
 
-详见 [安全报告](/report)
+详见 [安全报告](http://192.168.57.137:5000/report)
