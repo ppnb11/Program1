@@ -199,11 +199,6 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/report")
-def report():
-    return send_file("security_report.html")
-
-
 @app.route("/report02")
 def report02():
     return send_file("day02_security_report.html")
