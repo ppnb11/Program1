@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day03 安全漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0fdf4; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(5, 150, 105, 0.2); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #fbbf24; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; font-weight: 600; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(5, 150, 105, 0.06); }
+        .section h2 { font-size: 20px; color: #065f46; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #d1fae5; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.high { background: #fff5f5; border: 1px solid #fed7d7; }
+        .stat-card.mid { background: #fffaf0; border: 1px solid #feebc8; }
+        .stat-card.all { background: #ecfdf5; border: 1px solid #a7f3d0; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.high .stat-number { color: #e53e3e; }
+        .stat-card.mid .stat-number { color: #dd6b20; }
+        .stat-card.all .stat-number { color: #059669; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #d1fae5; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #f0fdf4; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-high { background: #fed7d7; color: #c53030; }
+        .severity-mid { background: #feebc8; color: #c05621; }
+        .status-fixed { background: #c6f6d5; color: #276749; }
+        .status-new { background: #dbeafe; color: #1e40af; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #065f46; margin-top: 16px; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #f0fdf4; }
+        .feature-list li:before { content: "✦ "; color: #059669; font-weight: bold; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 03 安全审计</span>
+        <h1>🛡️ 安全漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · 新增功能安全加固</p>
+        <span class="badge">⚠️ 10 项漏洞已全部修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card high"><div class="stat-number">5</div><div class="stat-label">🔴 高危漏洞</div></div>
+            <div class="stat-card mid"><div class="stat-number">5</div><div class="stat-label">🟡 中危漏洞</div></div>
+            <div class="stat-card all"><div class="stat-number">10</div><div class="stat-label">✅ 全部修复</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对新增的注册/搜索功能及 SQLite 数据库进行安全加固，修复了 SQL 注入、密码存储、认证同步等 10 项安全问题。</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 涉及功能范围</h2>
+        <ul class="feature-list">
+            <li>新增用户注册功能（含 SQLite 数据库存储）</li>
+            <li>新增用户搜索功能（按用户名/邮箱搜索）</li>
+            <li>登录认证从字典迁移到 SQLite 数据库</li>
+            <li>输入校验与频率限制机制</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:150px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>SQL注入 — 搜索接口</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>f-string 拼接 SQL 改为<strong>参数化查询</strong>（<code>?</code> 占位符），UNION 注入、盲注均被拦截。</td></tr>
+                <tr><td>2</td><td><strong>SQL注入 — 注册接口</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>注册 SQL 改为参数化查询，用户输入不再拼入 SQL 语句。</td></tr>
+                <tr><td>3</td><td><strong>数据库明文密码存储</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>初始化及注册均使用 <code>generate_password_hash()</code> 哈希存储，SQLite 中无明文密码。</td></tr>
+                <tr><td>4</td><td><strong>登录/注册数据不同步</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>登录验证从硬编码 <code>USERS</code> 字典改为统一查询 SQLite 数据库，注册用户可正常登录。</td></tr>
+                <tr><td>5</td><td><strong>UNION注入提取密码</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>参数化查询 + 搜索仅选取 <code>id, username, email, phone</code>，密码字段不返回模板。</td></tr>
+                <tr><td>6</td><td><strong>注册无频率限制</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>注册接口添加 <code>@limiter.limit("10 per minute")</code>，第 11 次返回 429。</td></tr>
+                <tr><td>7</td><td><strong>无密码强度校验</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>添加 <code>validate_password()</code>，密码长度至少 6 位。</td></tr>
+                <tr><td>8</td><td><strong>无输入校验</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>用户名 3-20 位字母数字中文、邮箱格式校验、手机号格式校验。</td></tr>
+                <tr><td>9</td><td><strong>错误信息泄露数据库结构</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>捕获 SQL 异常返回通用提示 "注册失败，用户名可能已存在"。</td></tr>
+                <tr><td>10</td><td><strong>搜索返回含密码字段</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td><code>SELECT *</code> 改为 <code>SELECT id, username, email, phone</code>。</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+
+        <h3 style="font-size:15px; color:#065f46; margin-bottom:8px;">🔐 参数化查询防SQL注入</h3>
+        <pre><code><span class="diff-remove">- sql = f"SELECT * FROM users WHERE username LIKE '%{keyword}%' OR email LIKE '%{keyword}%'"</span>
+<span class="diff-add">+ sql = "SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?"</span>
+<span class="diff-add">+ c.execute(sql, (f"%{keyword}%", f"%{keyword}%"))</span>
+
+<span class="diff-remove">- sql = f"INSERT INTO users (...) VALUES ('{username}', '{password}', '{email}', '{phone}')"</span>
+<span class="diff-add">+ c.execute("INSERT INTO users (...) VALUES (?, ?, ?, ?, 'user', 0)", (username, hashed_pw, email, phone))</span></code></pre>
+
+        <h3 style="font-size:15px; color:#065f46; margin:16px 0 8px;">🔑 密码哈希 + 登录同步</h3>
+        <pre><code><span class="diff-remove">- VALUES ('admin', 'admin123', ...)</span>
+<span class="diff-add">+ c.execute("INSERT ... VALUES (?, ?, ?, ?, ?, ?)", ("admin", generate_password_hash("admin123"), ...))</span>
+
+<span class="diff-remove">- if username in USERS and check_password_hash(USERS[username]["password"], password):</span>
+<span class="diff-add">+ c.execute("SELECT password, role FROM users WHERE username = ?", (username,))</span>
+<span class="diff-add">+ row = c.fetchone()</span>
+<span class="diff-add">+ if row and check_password_hash(row[0], password):</span></code></pre>
+
+        <h3 style="font-size:15px; color:#065f46; margin:16px 0 8px;">🛡️ 输入校验 + 频率限制</h3>
+        <pre><code><span class="diff-add">+ def validate_username(u):  # 3-20位, 字母数字中文</span>
+<span class="diff-add">+ def validate_password(p):  # 至少6位</span>
+<span class="diff-add">+ def validate_email(e):     # 邮箱格式</span>
+<span class="diff-add">+ @limiter.limit("10 per minute")  # 注册限流</span></code></pre>
+
+        <h3 style="font-size:15px; color:#065f46; margin:16px 0 8px;">🚫 错误信息脱敏</h3>
+        <pre><code><span class="diff-remove">- message = f"注册失败：{str(e)}"  # 暴露UNIQUE constraint等</span>
+<span class="diff-add">+ return render_template("register.html", message="注册失败，用户名可能已存在")</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 修复验证测试</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:80px">预期</th><th style="width:70px">结果</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>正常搜索功能</td><td>200 + 结果</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>搜索 UNION 注入查版本</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>搜索 UNION 注入查密码</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>搜索 OR 1=1 盲注</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>密码哈希存储（非明文）</td><td>已哈希</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>admin/admin123 登录</td><td>成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>新注册用户可登录</td><td>成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>8</td><td>弱密码(123)被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>9</td><td>短用户名(ab)被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>特殊字符用户名被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>11</td><td>错误信息不泄露数据库结构</td><td>通用提示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>12</td><td>注册频率限制（第11次）</td><td>429</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr><td>app.py</td><td>参数化查询、密码哈希、登录同步SQLite、输入校验函数、频率限制、错误信息脱敏、搜索字段脱敏</td></tr>
+                <tr><td>login.html</td><td>新增成功消息显示区域</td></tr>
+                <tr><td>style.css</td><td>新增成功提示样式（绿色）</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025<br>
+            🔗 <a href="/report02" style="color:#065f46;">查看 Day02 安全报告</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

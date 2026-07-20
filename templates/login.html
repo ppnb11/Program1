@@ -5,6 +5,9 @@
     {% if error %}
         <div class="error-msg">{{ error }}</div>
     {% endif %}
+    {% if message %}
+        <div class="success-msg">{{ message }}</div>
+    {% endif %}
     <form method="POST" action="/login" class="login-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">

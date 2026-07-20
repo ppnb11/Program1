@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>安全漏洞修复报告 — 用户管理系统</title>
+    <title>安全漏洞修复报告</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; color: #333; padding: 40px 20px; }
         .container { max-width: 960px; margin: 0 auto; }
-        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+        .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; }
         .header h1 { font-size: 28px; margin-bottom: 8px; }
         .header .subtitle { font-size: 15px; opacity: 0.8; }
         .header .badge { display: inline-block; background: #00b894; color: white; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; }
@@ -26,10 +26,10 @@
         .stat-card.low .stat-number { color: #38a169; }
         .stat-card.all .stat-number { color: #3182ce; }
         .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
-        .vuln-table { width: 100%; border-collapse: collapse; }
-        .vuln-table th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #eee; }
-        .vuln-table td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-        .vuln-table tr:hover td { background: #fafafa; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #eee; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #fafafa; }
         .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
         .severity-high { background: #fed7d7; color: #c53030; }
         .severity-mid { background: #feebc8; color: #c05621; }
@@ -40,253 +40,180 @@
         code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
         .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
         .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
-        .timeline { list-style: none; }
-        .timeline li { padding: 12px 0 12px 28px; border-left: 3px solid #e2e8f0; position: relative; }
-        .timeline li::before { content: ""; position: absolute; left: -9px; top: 18px; width: 14px; height: 14px; border-radius: 50%; background: #48bb78; border: 3px solid #fff; box-shadow: 0 0 0 2px #48bb78; }
-        .timeline li .time { font-size: 12px; color: #999; }
-        .timeline li .desc { font-size: 14px; margin-top: 4px; }
-        .footer { text-align: center; color: #999; font-size: 13px; padding: 20px 0; }
         .footnote { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #92400e; margin-top: 16px; }
-        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } .summary-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
     </style>
 </head>
 <body>
 <div class="container">
 
-    <!-- Header -->
     <div class="header">
         <h1>🛡️ 安全漏洞修复报告</h1>
         <p class="subtitle">用户管理系统 · Flask Web Application · /opt/Class01</p>
-        <span class="badge">✅ 已全部修复 · 2026-07-19</span>
+        <span class="badge">✅ 已全部修复</span>
     </div>
 
-    <!-- Summary -->
     <div class="section">
         <h2>📊 漏洞修复总览</h2>
         <div class="summary-grid">
-            <div class="stat-card high">
-                <div class="stat-number">3</div>
-                <div class="stat-label">🔴 高危漏洞</div>
-            </div>
-            <div class="stat-card mid">
-                <div class="stat-number">4</div>
-                <div class="stat-label">🟡 中危漏洞</div>
-            </div>
-            <div class="stat-card low">
-                <div class="stat-number">1</div>
-                <div class="stat-label">🟢 低危漏洞</div>
-            </div>
-            <div class="stat-card all">
-                <div class="stat-number">8</div>
-                <div class="stat-label">✅ 全部修复</div>
-            </div>
+            <div class="stat-card high"><div class="stat-number">5</div><div class="stat-label">🔴 高危漏洞</div></div>
+            <div class="stat-card mid"><div class="stat-number">5</div><div class="stat-label">🟡 中危漏洞</div></div>
+            <div class="stat-card all"><div class="stat-number">10</div><div class="stat-label">✅ 全部修复</div></div>
         </div>
+        <p style="font-size:14px; color:#666; margin-bottom:16px;">共发现 10 项安全漏洞，已全部修复完成。经 12 项测试验证，全部通过 ✓</p>
     </div>
 
-    <!-- Vulnerability Detail Table -->
     <div class="section">
         <h2>🔎 漏洞明细与修复方案</h2>
-        <table class="vuln-table">
-            <thead>
-                <tr>
-                    <th style="width:20px">#</th>
-                    <th style="width:160px">漏洞名称</th>
-                    <th style="width:80px">严重度</th>
-                    <th style="width:70px">状态</th>
-                    <th>修复措施</th>
-                </tr>
-            </thead>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>漏洞名称</th><th style="width:80px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
             <tbody>
                 <tr>
-                    <td>1</td>
-                    <td><strong>明文密码存储</strong></td>
+                    <td>1</td><td><strong>SQL注入 — 搜索接口</strong></td>
                     <td><span class="severity-tag severity-high">🔴 高危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>使用 Werkzeug <code>generate_password_hash()</code> 对密码进行 bcrypt 哈希存储，登录时通过 <code>check_password_hash()</code> 比对，防止数据库泄露导致密码直接暴露。</td>
+                    <td>搜索接口由 f-string 拼接 SQL 改为<strong>参数化查询</strong>（<code>? 占位符</code>），用户输入无法改变 SQL 语句结构。UNION 注入、盲注均被拦截。</td>
                 </tr>
                 <tr>
-                    <td>2</td>
-                    <td><strong>页面泄露明文密码</strong></td>
+                    <td>2</td><td><strong>SQL注入 — 注册接口</strong></td>
                     <td><span class="severity-tag severity-high">🔴 高危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td><code>get_user_info()</code> 在返回用户信息给模板前主动移除 <code>password</code> 字段，index.html 中删除密码行的渲染。</td>
+                    <td>注册接口由 f-string 拼接 SQL 改为<strong>参数化查询</strong>，用户输入不再拼入 SQL 语句。</td>
                 </tr>
                 <tr>
-                    <td>3</td>
-                    <td><strong>HTML 注释泄露默认账号</strong></td>
+                    <td>3</td><td><strong>数据库明文密码存储</strong></td>
                     <td><span class="severity-tag severity-high">🔴 高危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>删除 login.html 中 <code>&lt;!-- 调试信息 - 默认管理员账号 ... --&gt;</code> 注释。</td>
+                    <td>注册和初始化时使用 <code>generate_password_hash()</code> 对密码进行 bcrypt/scrypt 哈希存储，数据库泄露也无法还原原密码。</td>
                 </tr>
                 <tr>
-                    <td>4</td>
-                    <td><strong>Secret Key 硬编码</strong></td>
+                    <td>4</td><td><strong>登录/注册数据不同步</strong></td>
+                    <td><span class="severity-tag severity-high">🔴 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>登录验证从硬编码 <code>USERS</code> 字典改为统一查询 <code>SQLite</code> 数据库，注册的用户现在可以正常登录。</td>
+                </tr>
+                <tr>
+                    <td>5</td><td><strong>UNION注入提取密码</strong></td>
+                    <td><span class="severity-tag severity-high">🔴 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>参数化查询 + 搜索改为仅选取 <code>id, username, email, phone</code> 字段，不包含 password 字段，即使注入成功也无法获取密码。</td>
+                </tr>
+                <tr>
+                    <td>6</td><td><strong>注册无频率限制</strong></td>
                     <td><span class="severity-tag severity-mid">🟡 中危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>从硬编码的 <code>"dev-key-2025"</code> 改为读取环境变量 <code>SECRET_KEY</code>，未设置时自动生成 64 字符随机 Hex 字符串。</td>
+                    <td>注册接口添加 <code>@limiter.limit("10 per minute")</code> 频率限制，第 11 次请求返回 HTTP 429。</td>
                 </tr>
                 <tr>
-                    <td>5</td>
-                    <td><strong>缺乏 CSRF 防护</strong></td>
+                    <td>7</td><td><strong>无密码强度校验</strong></td>
                     <td><span class="severity-tag severity-mid">🟡 中危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>引入 <code>flask_wtf.CSRFProtect</code>，登录表单添加隐藏 <code>csrf_token</code> 字段，缺失 Token 的 POST 请求被拒绝（HTTP 400）。</td>
+                    <td>添加 <code>validate_password()</code> 函数，密码长度至少 6 位，未达标时返回友好提示。</td>
                 </tr>
                 <tr>
-                    <td>6</td>
-                    <td><strong>无权限校验</strong></td>
+                    <td>8</td><td><strong>无输入校验</strong></td>
                     <td><span class="severity-tag severity-mid">🟡 中危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>虽然现阶段仅展示已登录用户自身信息，但 <code>get_user_info()</code> 实现了从数据库取值时不依赖前端传入的用户名参数，为后续添加细粒度权限控制奠定基础。</td>
+                    <td>添加 <code>validate_username()</code>、<code>validate_email()</code>、<code>validate_phone()</code> 函数，用户名长度 3-20 位，限制特殊字符，校验邮箱格式。</td>
                 </tr>
                 <tr>
-                    <td>7</td>
-                    <td><strong>Debug 模式始终开启</strong></td>
-                    <td><span class="severity-tag severity-low">🟢 低危</span></td>
-                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td><code>debug=True</code> 改为由环境变量 <code>FLASK_DEBUG</code> 控制，生产环境默认关闭，避免 Debugger PIN 暴露导致远程代码执行风险。</td>
-                </tr>
-                <tr>
-                    <td>8</td>
-                    <td><strong>登录接口无频率限制（可爆破）</strong></td>
+                    <td>9</td><td><strong>错误信息泄露数据库结构</strong></td>
                     <td><span class="severity-tag severity-mid">🟡 中危</span></td>
                     <td><span class="status-tag status-fixed">✅ 已修复</span></td>
-                    <td>引入 <code>flask_limiter</code> 库，对登录接口限制为 <strong>每分钟最多 5 次</strong> 尝试，超出后返回 HTTP 429 Too Many Requests，爆破工具无法继续。</td>
+                    <td>捕获 SQL 异常，返回通用错误信息 "注册失败，用户名可能已存在"，不暴露 UNIQUE constraint 等数据库细节。</td>
+                </tr>
+                <tr>
+                    <td>10</td><td><strong>搜索返回含密码字段</strong></td>
+                    <td><span class="severity-tag severity-mid">🟡 中危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>搜索结果由 <code>SELECT *</code> 改为只选取 <code>id, username, email, phone</code>，密码字段不再进入模板数据。</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Code Changes -->
     <div class="section">
         <h2>📝 关键代码变更</h2>
 
-        <h3 style="font-size:15px; color:#555; margin-bottom:8px;">🔐 密码哈希存储（app.py）</h3>
-        <pre><code><span class="diff-remove">- "password": "admin123"</span>
-<span class="diff-add">+ "password": generate_password_hash("admin123")</span>
+        <h3 style="font-size:15px; color:#555; margin-bottom:8px;">🔐 参数化查询防SQL注入（app.py /search + /register）</h3>
+        <pre><code><span class="diff-remove">- sql = f"SELECT * FROM users WHERE username LIKE '%{keyword}%' OR email LIKE '%{keyword}%'"</span>
+<span class="diff-add">+ sql = "SELECT id, username, email, phone FROM users WHERE username LIKE ? OR email LIKE ?"</span>
+<span class="diff-add">+ c.execute(sql, (f"%{keyword}%", f"%{keyword}%"))</span>
 
-  # 登录校验
-<span class="diff-remove">- if USERS[username]["password"] == password:</span>
-<span class="diff-add">+ if check_password_hash(USERS[username]["password"], password):</span></code></pre>
+<span class="diff-remove">- sql = f"INSERT INTO users (...) VALUES ('{username}', '{password}', '{email}', '{phone}')"</span>
+<span class="diff-add">+ sql = "INSERT INTO users (...) VALUES (?, ?, ?, ?, 'user', 0)"</span>
+<span class="diff-add">+ c.execute(sql, (username, hashed_pw, email, phone))</span></code></pre>
 
-        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🔑 Secret Key & Debug 模式（app.py）</h3>
-        <pre><code><span class="diff-remove">- app.secret_key = "dev-key-2025"</span>
-<span class="diff-add">+ app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))</span>
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🔑 密码哈希存储（app.py init_db + /register）</h3>
+        <pre><code><span class="diff-remove">- VALUES ('admin', 'admin123', ...)</span>
+<span class="diff-add">+ VALUES (?, ?, ?, ?, ?, ?)</span>
+<span class="diff-add">+ # 参数传入: ("admin", generate_password_hash("admin123"), ...)</span>
 
-<span class="diff-remove">- app.run(debug=True, host="0.0.0.0", port=5000)</span>
-<span class="diff-add">+ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"</span>
-<span class="diff-add">+ app.run(debug=debug_mode, host="0.0.0.0", port=5000)</span></code></pre>
+<span class="diff-remove">- VALUES ('{username}', '{password}', '{email}', '{phone}')</span>
+<span class="diff-add">+ hashed_pw = generate_password_hash(password)</span>
+<span class="diff-add">+ c.execute(sql, (username, hashed_pw, email, phone))</span></code></pre>
 
-        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🛡️ CSRF 保护（app.py + login.html）</h3>
-        <pre><code><span class="diff-add">+ from flask_wtf.csrf import CSRFProtect</span>
-<span class="diff-add">+ csrf = CSRFProtect(app)</span>
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🔗 登录统一查询SQLite（app.py /login）</h3>
+        <pre><code><span class="diff-remove">- if username in USERS and check_password_hash(USERS[username]["password"], password):</span>
+<span class="diff-add">+ c.execute("SELECT password, role FROM users WHERE username = ?", (username,))</span>
+<span class="diff-add">+ row = c.fetchone()</span>
+<span class="diff-add">+ if row and check_password_hash(row[0], password):</span></code></pre>
 
-  &lt;!-- login.html --&gt;
-<span class="diff-add">+ &lt;input type="hidden" name="csrf_token" value="{{ csrf_token() }}"&gt;</span></code></pre>
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🛡️ 输入校验 + 频率限制（app.py /register）</h3>
+        <pre><code><span class="diff-add">+ @limiter.limit("10 per minute", key_func=login_limit_key)</span>
+<span class="diff-add">+ err = validate_username(username)</span>
+<span class="diff-add">+ err = validate_password(password)</span>
+<span class="diff-add">+ err = validate_email(email)</span></code></pre>
 
-        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">👤 用户信息脱敏（app.py + index.html）</h3>
-        <pre><code><span class="diff-add">+ def get_user_info(username):</span>
-<span class="diff-add">+     user = USERS[username].copy()</span>
-<span class="diff-add">+     user.pop("password", None)  # 脱敏</span>
-<span class="diff-add">+     return user</span>
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">📋 搜索字段脱敏（app.py /search）</h3>
+        <pre><code><span class="diff-remove">- sql = "SELECT * FROM users WHERE ..."</span>
+<span class="diff-add">+ sql = "SELECT id, username, email, phone FROM users WHERE ..."</span></code></pre>
 
-  &lt;!-- index.html --&gt;
-<span class="diff-remove">- &lt;li&gt;&lt;span&gt;密码：&lt;/span&gt;{{ user.password }}&lt;/li&gt;</span>
-<span class="diff-add">+ &lt;!-- 已删除密码行 --&gt;</span></code></pre>
-
-        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">📄 删除调试注释（login.html）</h3>
-        <pre><code><span class="diff-remove">- &lt;!-- 调试信息 - 默认管理员账号 用户名: admin 密码: admin123 --&gt;</span>
-<span class="diff-add">+ &lt;!-- 已删除 --&gt;</span></code></pre>
-
-        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">⏱️ 登录频率限制（app.py）</h3>
-        <pre><code><span class="diff-add">+ from flask_limiter import Limiter</span>
-<span class="diff-add">+ from flask_limiter.util import get_remote_address</span>
-<span class="diff-add">+ </span>
-<span class="diff-add">+ # 关键函数：仅对 POST 登录请求计数，GET 获取页面不计数</span>
-<span class="diff-add">+ def login_limit_key():</span>
-<span class="diff-add">+     if request.method == "GET":</span>
-<span class="diff-add">+         return None  # 不计入限流</span>
-<span class="diff-add">+     return get_remote_address()</span>
-<span class="diff-add">+ </span>
-<span class="diff-add">+ limiter = Limiter(app=app, key_func=get_remote_address, storage_uri="memory://")</span>
-<span class="diff-add">+ </span>
-<span class="diff-add">+ @app.route("/login", methods=["GET", "POST"])</span>
-<span class="diff-add">+ @limiter.limit("5 per minute", key_func=login_limit_key)  # 每分钟最多 5 次 POST 尝试</span>
-<span class="diff-add">+ def login():</span></code></pre>
+        <h3 style="font-size:15px; color:#555; margin:16px 0 8px;">🚫 错误信息脱敏（app.py /register）</h3>
+        <pre><code><span class="diff-remove">- message = f"注册失败：{str(e)}"</span>
+<span class="diff-add">+ return render_template("register.html", message="注册失败，用户名可能已存在")</span></code></pre>
     </div>
 
-    <!-- Test Verification -->
     <div class="section">
         <h2>🧪 修复验证测试</h2>
-        <table class="vuln-table">
-            <thead>
-                <tr>
-                    <th style="width:24px">#</th>
-                    <th>测试项</th>
-                    <th style="width:100px">预期</th>
-                    <th style="width:90px">结果</th>
-                </tr>
-            </thead>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:100px">预期</th><th style="width:80px">结果</th></tr></thead>
             <tbody>
-                <tr><td>1</td><td>首页 HTTP 状态</td><td>200</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>2</td><td>登录页无调试注释</td><td>无泄露</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>3</td><td>登录页包含 CSRF Token</td><td>存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>4</td><td>正常登录（admin / admin123）</td><td>成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>5</td><td>登录后首页无明文密码泄露</td><td>无密码</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>6</td><td>错误密码提示</td><td>错误提示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>7</td><td>无 CSRF Token 被拒绝</td><td>400</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>8</td><td>密码哈希存储</td><td>已哈希</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>9</td><td>Secret Key 非硬编码</td><td>环境变量</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
-                <tr><td>10</td><td>连续登录 5 次后第 6 次被限流</td><td>429</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>1</td><td>正常搜索功能</td><td>200 + 正常结果</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>搜索 UNION 注入查版本</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>搜索 UNION 注入查密码</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>搜索 OR 1=1 盲注</td><td>拦截</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>密码哈希存储</td><td>非明文</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>admin/admin123 登录</td><td>成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>新注册用户登录</td><td>成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>8</td><td>弱密码被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>9</td><td>短用户名被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>特殊字符用户名被拒绝</td><td>提示错误</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>11</td><td>错误信息不泄露数据库结构</td><td>通用提示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>12</td><td>注册频率限制 (第11次)</td><td>429</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- 修复文件清单 -->
     <div class="section">
         <h2>📁 修复涉及文件</h2>
-        <table class="vuln-table">
-            <thead>
-                <tr><th>文件</th><th>路径</th><th>修改内容</th></tr>
-            </thead>
+        <table>
+            <thead><tr><th>文件</th><th>路径</th><th>修改内容</th></tr></thead>
             <tbody>
-                <tr><td>🐍 app.py</td><td><code>/opt/Class01/app.py</code></td><td>密码哈希、Secret Key 环境变量、CSRF 保护、Debug 模式控制、用户信息脱敏、登录频率限制</td></tr>
-                <tr><td>📄 login.html</td><td><code>/opt/Class01/templates/login.html</code></td><td>删除调试注释、添加 CSRF Token 隐藏字段</td></tr>
-                <tr><td>📄 index.html</td><td><code>/opt/Class01/templates/index.html</code></td><td>删除密码字段渲染</td></tr>
+                <tr><td>🐍 app.py</td><td><code>/opt/Class01/app.py</code></td><td>参数化查询、密码哈希、登录同步SQLite、输入校验、频率限制、错误信息脱敏、搜索字段脱敏</td></tr>
+                <tr><td>📄 login.html</td><td><code>/opt/Class01/templates/login.html</code></td><td>新增成功消息显示区域</td></tr>
+                <tr><td>🎨 style.css</td><td><code>/opt/Class01/static/css/style.css</code></td><td>新增成功提示样式</td></tr>
             </tbody>
         </table>
     </div>
 
-    <!-- 启动方式 -->
     <div class="section">
         <h2>🚀 启动方式</h2>
         <pre><code>cd /opt/Class01 && python3 app.py</code></pre>
-        <p style="font-size:14px; color:#666; margin-top:8px;">
-            访问: <a href="http://192.168.57.137:5000">http://192.168.57.137:5000</a>
-        </p>
+        <p style="font-size:14px; color:#666; margin-top:8px;">访问: <a href="http://192.168.57.137:5000">http://192.168.57.137:5000</a></p>
         <div class="footnote">
-            💡 如需开启 Debug 模式：<code>FLASK_DEBUG=1 python3 app.py</code>
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025
         </div>
-    </div>
-
-    <!-- 时间线 -->
-    <div class="section">
-        <h2>⏱️ 修复时间线</h2>
-        <ul class="timeline">
-            <li><span class="time">2026-07-19 03:00</span><div class="desc">📋 漏洞评估 — 识别出 8 项安全漏洞（3 高危 / 4 中危 / 1 低危）</div></li>
-            <li><span class="time">2026-07-19 03:01</span><div class="desc">🔐 修复 #1 — 密码哈希存储 (generate_password_hash)</div></li>
-            <li><span class="time">2026-07-19 03:02</span><div class="desc">👤 修复 #2 — 用户信息脱敏，页面不再显示密码</div></li>
-            <li><span class="time">2026-07-19 03:03</span><div class="desc">📄 修复 #3 — 删除 HTML 调试注释</div></li>
-            <li><span class="time">2026-07-19 03:04</span><div class="desc">🔑 修复 #4 — Secret Key 改为环境变量 + 随机生成</div></li>
-            <li><span class="time">2026-07-19 03:05</span><div class="desc">🛡️ 修复 #5 — 引入 Flask-WTF CSRF 保护</div></li>
-            <li><span class="time">2026-07-19 03:06</span><div class="desc">🔒 修复 #6 — 实现权限校验基础框架</div></li>
-            <li><span class="time">2026-07-19 03:07</span><div class="desc">🐛 修复 #7 — Debug 模式由环境变量控制</div></li>
-            <li><span class="time">2026-07-19 03:08</span><div class="desc">⏱️ 修复 #8 — 登录接口加入频率限制（flask-limiter，每分钟5次）</div></li>
-            <li><span class="time">2026-07-19 03:09</span><div class="desc">🧪 全面测试 — 10 项测试全部通过 ✅</div></li>
-        </ul>
-    </div>
-
-    <div class="footer">
     </div>
 
 </div>

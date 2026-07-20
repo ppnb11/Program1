@@ -176,6 +176,17 @@ body {
     border: 1px solid #f5cba7;
 }
 
+/* 成功提示 */
+.success-msg {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 18px;
+    border: 1px solid #c3e6cb;
+}
+
 /* 用户信息列表 */
 .user-info {
     margin-top: 8px;
@@ -209,4 +220,81 @@ body {
     color: #6b5a4a;
     display: inline-block;
     width: 70px;
+}
+
+/* 搜索样式 */
+.search-form {
+    margin-bottom: 4px;
+}
+
+.search-group {
+    display: flex;
+    gap: 10px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e8ddd0;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fefcf9;
+}
+
+.search-input:focus {
+    border-color: #ff7e5f;
+    box-shadow: 0 0 0 3px rgba(255, 126, 95, 0.15);
+}
+
+.btn-search {
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    color: white;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(255, 126, 95, 0.3);
+    white-space: nowrap;
+}
+
+.btn-search:hover {
+    background: linear-gradient(135deg, #f86d4a, #fea865);
+    transform: translateY(-1px);
+}
+
+/* 搜索表格 */
+.search-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.search-table th {
+    background: linear-gradient(135deg, #ff7e5f, #feb47b);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.search-table th:first-child {
+    border-radius: 8px 0 0 0;
+}
+
+.search-table th:last-child {
+    border-radius: 0 8px 0 0;
+}
+
+.search-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #f0e8de;
+}
+
+.search-table tr:hover td {
+    background: #fef9f5;
 }

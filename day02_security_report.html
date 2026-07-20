@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day02 安全漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f0f4ff; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #4a00e0 0%, #667eea 50%, #764ba2 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(74, 0, 224, 0.2); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #00b894; color: white; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(74, 0, 224, 0.06); }
+        .section h2 { font-size: 20px; color: #4a00e0; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #eef2ff; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.high { background: #fff5f5; border: 1px solid #fed7d7; }
+        .stat-card.mid { background: #fffaf0; border: 1px solid #feebc8; }
+        .stat-card.low { background: #f0fff4; border: 1px solid #c6f6d5; }
+        .stat-card.all { background: #eef2ff; border: 1px solid #c7d2fe; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.high .stat-number { color: #e53e3e; }
+        .stat-card.mid .stat-number { color: #dd6b20; }
+        .stat-card.low .stat-number { color: #38a169; }
+        .stat-card.all .stat-number { color: #4a00e0; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #eef2ff; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #f8faff; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-high { background: #fed7d7; color: #c53030; }
+        .severity-mid { background: #feebc8; color: #c05621; }
+        .severity-low { background: #e6fffa; color: #234e52; }
+        .status-fixed { background: #c6f6d5; color: #276749; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #4338ca; margin-top: 16px; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 02 安全审计</span>
+        <h1>🛡️ 安全漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · 第一阶段安全加固</p>
+        <span class="badge">✅ 8 项漏洞已全部修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card high"><div class="stat-number">3</div><div class="stat-label">🔴 高危漏洞</div></div>
+            <div class="stat-card mid"><div class="stat-number">4</div><div class="stat-label">🟡 中危漏洞</div></div>
+            <div class="stat-card low"><div class="stat-number">1</div><div class="stat-label">🟢 低危漏洞</div></div>
+            <div class="stat-card all"><div class="stat-number">8</div><div class="stat-label">✅ 全部修复</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对项目基础代码进行安全加固，修复了认证、会话、数据保护等方面的安全问题。</p>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:140px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>明文密码存储</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>使用 <code>generate_password_hash()</code> 进行 bcrypt 哈希存储，登录时通过 <code>check_password_hash()</code> 比对。</td></tr>
+                <tr><td>2</td><td><strong>页面泄露明文密码</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>新增 <code>get_user_info()</code> 函数，返回模板前主动移除 <code>password</code> 字段，删除 index.html 中的密码行渲染。</td></tr>
+                <tr><td>3</td><td><strong>HTML 注释泄露默认账号</strong></td><td><span class="severity-tag severity-high">🔴 高危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>删除 login.html 中暴露默认管理员账号密码的 HTML 调试注释。</td></tr>
+                <tr><td>4</td><td><strong>Secret Key 硬编码</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>从硬编码改为读取环境变量 <code>SECRET_KEY</code>，未设置时自动生成 64 字符随机字符串。</td></tr>
+                <tr><td>5</td><td><strong>缺乏 CSRF 防护</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>引入 <code>flask_wtf.CSRFProtect</code> 中间件，表单添加 <code>csrf_token</code> 隐藏字段，缺失 Token 请求返回 HTTP 400。</td></tr>
+                <tr><td>6</td><td><strong>无权限校验</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>重构为 <code>get_user_info()</code> 函数，基于 session 取值，不依赖用户传入参数。</td></tr>
+                <tr><td>7</td><td><strong>Debug 模式始终开启</strong></td><td><span class="severity-tag severity-low">🟢 低危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>改为环境变量 <code>FLASK_DEBUG</code> 控制，生产环境默认关闭。</td></tr>
+                <tr><td>8</td><td><strong>登录接口无频率限制</strong></td><td><span class="severity-tag severity-mid">🟡 中危</span></td><td><span class="status-tag status-fixed">✅ 已修复</span></td><td>引入 <code>flask_limiter</code>，登录 POST 限制为每分钟最多 5 次，超出返回 HTTP 429。</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+        <h3 style="font-size:15px; color:#4a00e0; margin-bottom:8px;">🔐 密码哈希存储</h3>
+        <pre><code><span class="diff-remove">- "password": "admin123"</span>
+<span class="diff-add">+ "password": generate_password_hash("admin123")</span></code></pre>
+
+        <h3 style="font-size:15px; color:#4a00e0; margin:16px 0 8px;">🔑 Secret Key & Debug</h3>
+        <pre><code><span class="diff-remove">- app.secret_key = "dev-key-2025"</span>
+<span class="diff-add">+ app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))</span>
+<span class="diff-remove">- app.run(debug=True, host="0.0.0.0", port=5000)</span>
+<span class="diff-add">+ debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"</span>
+<span class="diff-add">+ app.run(debug=debug_mode, host="0.0.0.0", port=5000)</span></code></pre>
+
+        <h3 style="font-size:15px; color:#4a00e0; margin:16px 0 8px;">🛡️ CSRF 保护</h3>
+        <pre><code><span class="diff-add">+ from flask_wtf.csrf import CSRFProtect</span>
+<span class="diff-add">+ csrf = CSRFProtect(app)</span></code></pre>
+
+        <h3 style="font-size:15px; color:#4a00e0; margin:16px 0 8px;">⏱️ 登录频率限制</h3>
+        <pre><code><span class="diff-add">+ @app.route("/login", methods=["GET", "POST"])</span>
+<span class="diff-add">+ @limiter.limit("5 per minute", key_func=login_limit_key)</span>
+<span class="diff-add">+ def login():</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 测试验证</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:80px">结果</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>首页 HTTP 200</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>登录页无调试注释</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>CSRF Token 存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>正常登录成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>首页无明文密码</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>错误密码提示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>无 CSRF Token 被拒绝（400）</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>8</td><td>密码哈希存储</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>9</td><td>Secret Key 非硬编码</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>登录限流第 6 次 429</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr><td>app.py</td><td>密码哈希、Secret Key 环境变量化、CSRF 保护、Debug 控制、用户信息脱敏、登录频率限制</td></tr>
+                <tr><td>login.html</td><td>删除调试注释、添加 CSRF Token</td></tr>
+                <tr><td>index.html</td><td>删除密码字段渲染</td></tr>
+                <tr><td>style.css</td><td>暖色调 UI 主题</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
