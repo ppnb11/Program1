@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day05 业务逻辑漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fef3f2; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(220, 38, 38, 0.2); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #fbbf24; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; font-weight: 600; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(220, 38, 38, 0.06); }
+        .section h2 { font-size: 20px; color: #991b1b; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #fecaca; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.critical { background: #fef2f2; border: 1px solid #fecaca; }
+        .stat-card.high { background: #fff7ed; border: 1px solid #fed7aa; }
+        .stat-card.all { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.critical .stat-number { color: #dc2626; }
+        .stat-card.high .stat-number { color: #ea580c; }
+        .stat-card.all .stat-number { color: #16a34a; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #fecaca; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #fef2f2; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-critical { background: #fecaca; color: #991b1b; }
+        .severity-high { background: #fed7aa; color: #9a3412; }
+        .status-fixed { background: #bbf7d0; color: #166534; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #166534; margin-top: 16px; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fef2f2; }
+        .feature-list li:before { content: "✦ "; color: #dc2626; font-weight: bold; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 05 安全审计</span>
+        <h1>🛡️ 业务逻辑漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · 个人中心与充值功能安全加固</p>
+        <span class="badge">⚠️ 4 项严重漏洞已全部修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card critical"><div class="stat-number">3</div><div class="stat-label">🔴 严重漏洞</div></div>
+            <div class="stat-card high"><div class="stat-number">1</div><div class="stat-label">🟠 高危漏洞</div></div>
+            <div class="stat-card all"><div class="stat-number">4</div><div class="stat-label">✅ 全部修复</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对新增的个人中心和充值功能进行深度安全检测，发现并修复了身份认证缺失、IDOR越权访问、负数充值、金额无上限等 4 项严重业务逻辑漏洞。所有漏洞均已完成修复并通过 13 项验证测试。</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 涉及功能范围</h2>
+        <ul class="feature-list">
+            <li>个人中心功能（/profile 路由）</li>
+            <li>用户充值功能（/recharge 路由）</li>
+            <li>用户资料展示（邮箱、手机、角色、余额）</li>
+            <li>身份认证与权限控制</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:180px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>个人中心与充值接口无身份认证</strong><br><span style="font-size:12px; color:#999;">未登录可查看/篡改任意用户数据（IDOR越权）</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>在 <code>/profile</code> 和 <code>/recharge</code> 路由开头<strong>添加 session 登录检查</strong>，未登录自动跳转登录页。添加<strong>权限校验</strong>，只允许查看自己的资料。<code>/recharge</code> 中 <code>user_id</code> 改为从 <code>session</code> 获取，防止前端参数篡改。</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>充值金额可为负数</strong><br><span style="font-size:12px; color:#999;">任意用户余额可被窃取至负数</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>添加<strong>正数校验</strong>（<code>amount_int &lt;= 0</code> 时拒绝），添加<strong>余额下限保护</strong>（查询当前余额，<code>new_balance &lt; 0</code> 时提示余额不足）。</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>/profile 和 /recharge 路由无身份认证</strong><br><span style="font-size:12px; color:#999;">系统级认证缺陷（前两项漏洞的根因）</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>参照 <code>/upload</code> 路由的正确实现，在两个新路由开头统一添加 <code>session.get("username")</code> 检查，未登录时重定向到 <code>/login</code>。</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>充值金额无上限限制</strong><br><span style="font-size:12px; color:#999;">单次可充值天文数字摧毁经济系统</span></td>
+                    <td><span class="severity-tag severity-high">🟠 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>添加<strong>单次充值上限 100000</strong>（<code>amount_int &gt; 100000</code> 时拒绝），防止一次性充值天文数字破坏经济系统。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+
+        <h3 style="font-size:15px; color:#991b1b; margin-bottom:8px;">🔐 身份认证 + 权限校验（修复认证缺失和IDOR越权）</h3>
+        <pre><code><span class="diff-remove">- @app.route("/profile")</span>
+<span class="diff-remove">- def profile():</span>
+<span class="diff-remove">-     user_id = request.args.get("user_id", "")  # 无任何认证检查</span>
+
+<span class="diff-add">+ @app.route("/profile")</span>
+<span class="diff-add">+ def profile():</span>
+<span class="diff-add">+     username = session.get("username")       # ✅ 身份认证检查</span>
+<span class="diff-add">+     if not username:</span>
+<span class="diff-add">+         return redirect(url_for("login"))</span>
+<span class="diff-add">+     ...</span>
+<span class="diff-add">+     if str(user_id) != str(session.get("user_id")):  # ✅ 权限校验</span>
+<span class="diff-add">+         return render_template("profile.html", error="无权查看该用户资料")</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🔑 user_id 从 session 获取 + 充值安全校验</h3>
+        <pre><code><span class="diff-remove">- @app.route("/recharge", methods=["POST"])</span>
+<span class="diff-remove">- def recharge():</span>
+<span class="diff-remove">-     user_id = request.form.get("user_id", "")  # 从前端表单取，可篡改</span>
+<span class="diff-remove">-     amount_int = int(amount)                    # 无正负/上限校验</span>
+<span class="diff-remove">-     c.execute("UPDATE users SET balance = balance + ?", (amount_int, user_id))</span>
+
+<span class="diff-add">+ @app.route("/recharge", methods=["POST"])</span>
+<span class="diff-add">+ def recharge():</span>
+<span class="diff-add">+     if not session.get("username"):            # ✅ 身份认证</span>
+<span class="diff-add">+         return redirect(url_for("login"))</span>
+<span class="diff-add">+     user_id = session.get("user_id")           # ✅ 从session取，防篡改</span>
+<span class="diff-add">+     ...</span>
+<span class="diff-add">+     if amount_int &lt;= 0:                       # ✅ 正数校验</span>
+<span class="diff-add">+         return render_template(..., error="充值金额必须为正数")</span>
+<span class="diff-add">+     if amount_int &gt; 100000:                    # ✅ 上限校验</span>
+<span class="diff-add">+         return render_template(..., error="单次充值上限为100000")</span>
+<span class="diff-add">+     # 余额下限保护</span>
+<span class="diff-add">+     c.execute("SELECT balance FROM users WHERE id = ?", (user_id,))</span>
+<span class="diff-add">+     if current_balance + amount_int &lt; 0:</span>
+<span class="diff-add">+         return render_template(..., error="余额不足")</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🆔 登录时存储 user_id 到 session</h3>
+        <pre><code><span class="diff-remove">- c.execute("SELECT password, role FROM users WHERE username = ?", (username,))</span>
+<span class="diff-add">+ c.execute("SELECT password, role, id FROM users WHERE username = ?", (username,))</span>
+<span class="diff-add">+ session["user_id"] = row[2]  # 存储用户ID到session</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 修复验证测试</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:100px">预期结果</th><th style="width:70px">结果</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>未登录 GET /profile</td><td>302 跳转登录</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>未登录 POST /recharge</td><td>302 跳转登录</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>alice 查看 admin 资料（IDOR越权）</td><td>提示无权查看</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>alice 查看自己资料</td><td>正常显示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>admin 查看自己资料</td><td>正常显示</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>负数充值（amount=-100）</td><td>提示必须为正数</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>零金额充值（amount=0）</td><td>提示必须为正数</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>8</td><td>超出上限充值（amount=999999）</td><td>提示超上限</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>9</td><td>admin 正常充值 1000</td><td>302 成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>alice 正常充值 500</td><td>302 成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>11</td><td>越权访问 user_id=999</td><td>提示无权查看</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>12</td><td>user_id=abc 异常参数</td><td>提示无权查看</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>13</td><td>充值后重定向到个人中心</td><td>/profile?user_id=N</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>app.py</td>
+                    <td>
+                        • 登录时存储 <code>session["user_id"]</code><br>
+                        • <code>/profile</code> 添加 session 认证 + 权限校验（只允许查看自己）<br>
+                        • <code>/recharge</code> 添加 session 认证<br>
+                        • <code>/recharge</code> user_id 从 session 获取、不信任前端参数<br>
+                        • 添加充值金额正数校验、上限校验（100000）、余额下限保护
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔄 修复前后对比</h2>
+        <table>
+            <thead><tr><th>攻击场景</th><th style="width:120px">修复前</th><th style="width:120px">修复后</th></tr></thead>
+            <tbody>
+                <tr><td>未登录查看任意用户资料</td><td><span class="severity-tag severity-critical">🔴 可直接查看</span></td><td><span class="status-tag status-fixed">✅ 302 跳转登录</span></td></tr>
+                <tr><td>未登录给任意用户充值</td><td><span class="severity-tag severity-critical">🔴 可直接操作</span></td><td><span class="status-tag status-fixed">✅ 302 跳转登录</span></td></tr>
+                <tr><td>普通用户查看管理员资料</td><td><span class="severity-tag severity-critical">🔴 可越权查看</span></td><td><span class="status-tag status-fixed">✅ 提示无权查看</span></td></tr>
+                <tr><td>负数充值窃取资金</td><td><span class="severity-tag severity-critical">🔴 可任意扣款</span></td><td><span class="status-tag status-fixed">✅ 必须为正数</span></td></tr>
+                <tr><td>充值金额无限制</td><td><span class="severity-tag severity-high">🟠 无上限</span></td><td><span class="status-tag status-fixed">✅ 上限 100000</span></td></tr>
+                <tr><td>余额被扣至负数</td><td><span class="severity-tag severity-critical">🔴 可为负数</span></td><td><span class="status-tag status-fixed">✅ 提示余额不足</span></td></tr>
+                <tr><td>隐藏字段 user_id 篡改</td><td><span class="severity-tag severity-critical">🔴 可随意篡改</span></td><td><span class="status-tag status-fixed">✅ session 取ID</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 安全建议</h2>
+        <div class="footnote">
+            <strong>🔒 额外安全措施建议：</strong><br><br>
+            1. <strong>充值流水记录</strong>：为每次充值操作记录日志（操作人、金额、时间、IP），便于审计追溯<br>
+            2. <strong>单日充值上限</strong>：在充值上限校验基础上增加单日累计充值上限<br>
+            3. <strong>敏感信息脱敏</strong>：前端仅展示本人手机/邮箱，他人信息做脱敏处理<br>
+            4. <strong>操作二次确认</strong>：大额充值时增加二次确认弹窗<br>
+            5. <strong>WAF 防护</strong>：部署 Web 应用防火墙提供额外保护层
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025<br>
+            🔗 <a href="/report02" style="color:#166534;">查看 Day02 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report03" style="color:#166534;">查看 Day03 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report04" style="color:#166534;">查看 Day04 安全报告</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

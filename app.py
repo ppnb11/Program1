@@ -3,15 +3,10 @@ from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.utils import secure_filename
 import os
 import secrets
 import re
 import sqlite3
-import uuid
-import magic
-from PIL import Image
-from io import BytesIO
 
 app = Flask(__name__)
 # 使用环境变量中的密钥，如果未设置则随机生成
@@ -123,12 +118,13 @@ def login():
         password = request.form.get("password", "")
         conn = sqlite3.connect("data/users.db")
         c = conn.cursor()
-        c.execute("SELECT password, role FROM users WHERE username = ?", (username,))
+        c.execute("SELECT password, role, id FROM users WHERE username = ?", (username,))
         row = c.fetchone()
         conn.close()
         if row and check_password_hash(row[0], password):
             session["username"] = username
             session["role"] = row[1]
+            session["user_id"] = row[2]
             user_info = get_user_info(username)
             return render_template("index.html", username=username, user=user_info)
         else:
@@ -210,64 +206,6 @@ def logout():
 UPLOAD_FOLDER = os.path.join(app.root_path, "static", "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 文件上传安全配置
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
-ALLOWED_MIME_TYPES = {
-    'image/png': ['png'],
-    'image/jpeg': ['jpg', 'jpeg'],
-    'image/gif': ['gif'],
-    'image/webp': ['webp']
-}
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
-
-
-def allowed_file(filename):
-    """检查文件扩展名是否在白名单中"""
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def validate_file_content(file_stream, filename):
-    """验证文件内容是否合法"""
-    # 1. 检查文件大小
-    file_stream.seek(0, 2)
-    file_size = file_stream.tell()
-    file_stream.seek(0)
-    
-    if file_size > MAX_FILE_SIZE:
-        return None, "文件大小超过5MB限制"
-    
-    if file_size == 0:
-        return None, "文件为空"
-    
-    # 2. 检查MIME类型
-    content = file_stream.read()
-    file_stream.seek(0)
-    
-    actual_mime = magic.from_buffer(content, mime=True)
-    if actual_mime not in ALLOWED_MIME_TYPES:
-        return None, "不支持的文件类型"
-    
-    # 3. 验证扩展名与MIME类型匹配
-    ext = filename.rsplit('.', 1)[1].lower()
-    if ext not in ALLOWED_MIME_TYPES[actual_mime]:
-        return None, "文件扩展名与内容不匹配"
-    
-    # 4. 重新处理图片（去除恶意代码）
-    try:
-        img = Image.open(BytesIO(content))
-        img.verify()
-        
-        # 重新保存，去除嵌入的恶意代码
-        img = Image.open(BytesIO(content))
-        output = BytesIO()
-        img.save(output, format=img.format, quality=85)
-        output.seek(0)
-        
-        return output, None
-    except Exception as e:
-        return None, f"无效的图片文件: {str(e)}"
-
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
@@ -280,44 +218,16 @@ def upload():
         if not file or file.filename == "":
             return render_template("upload.html", error="请选择要上传的文件")
 
-        # 1. 过滤文件名，防止路径遍历
-        original_filename = secure_filename(file.filename)
-        if not original_filename:
-            return render_template("upload.html", error="无效的文件名")
+        # 使用用户上传的原始文件名保存，不做任何类型检查
+        filename = file.filename
+        save_path = os.path.join(UPLOAD_FOLDER, filename)
 
-        # 2. 检查扩展名
-        if not allowed_file(original_filename):
-            return render_template(
-                "upload.html", 
-                error=f"只允许上传 {', '.join(ALLOWED_EXTENSIONS)} 格式的图片"
-            )
+        # 同名文件保留，不做特殊处理
+        file.save(save_path)
 
-        # 3. 验证文件内容
-        sanitized_content, error = validate_file_content(file.stream, original_filename)
-        if error:
-            return render_template("upload.html", error=error)
-
-        # 4. 生成安全的文件名（使用UUID防止覆盖）
-        ext = original_filename.rsplit('.', 1)[1].lower()
-        safe_filename = f"{uuid.uuid4().hex}.{ext}"
-        save_path = os.path.join(UPLOAD_FOLDER, safe_filename)
-
-        # 5. 验证最终路径
-        real_path = os.path.realpath(save_path)
-        if not real_path.startswith(os.path.realpath(UPLOAD_FOLDER)):
-            return render_template("upload.html", error="非法的文件路径")
-
-        # 6. 保存文件
-        with open(save_path, 'wb') as f:
-            f.write(sanitized_content.read())
-
-        file_url = url_for("static", filename=f"uploads/{safe_filename}")
-        return render_template(
-            "upload.html", 
-            success=True, 
-            file_url=file_url, 
-            filename=original_filename
-        )
+        # 生成文件访问 URL
+        file_url = url_for("static", filename=f"uploads/{filename}")
+        return render_template("upload.html", success=True, file_url=file_url, filename=filename)
 
     return render_template("upload.html")
 
@@ -332,9 +242,89 @@ def report03():
     return send_file("day03_security_report.html")
 
 
-@app.route("/report04")
-def report04():
-    return send_file("day04_security_report.html")
+@app.route("/profile")
+def profile():
+    # 身份认证检查
+    username = session.get("username")
+    if not username:
+        return redirect(url_for("login"))
+
+    user_id = request.args.get("user_id", "")
+    if not user_id:
+        return render_template("profile.html", error="缺少 user_id 参数", profile_user=None)
+
+    # 权限校验：只允许查看自己的资料
+    if str(user_id) != str(session.get("user_id")):
+        return render_template("profile.html", error="无权查看该用户资料", profile_user=None)
+
+    conn = sqlite3.connect("data/users.db")
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT id, username, email, phone, role, balance FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+
+    if not row:
+        return render_template("profile.html", error="用户不存在", profile_user=None)
+
+    profile_user = dict(row)
+    return render_template("profile.html", profile_user=profile_user, error=None)
+
+
+@app.route("/recharge", methods=["POST"])
+def recharge():
+    # 身份认证检查
+    username = session.get("username")
+    if not username:
+        return redirect(url_for("login"))
+
+    # user_id 从 session 获取，不信任前端参数
+    user_id = session.get("user_id")
+
+    amount = request.form.get("amount", "")
+
+    if not user_id or not amount:
+        return redirect(url_for("profile", user_id=user_id))
+
+    try:
+        amount_int = int(amount)
+    except ValueError:
+        return redirect(url_for("profile", user_id=user_id))
+
+    # 金额校验：必须为正数
+    if amount_int <= 0:
+        return render_template("profile.html",
+            profile_user={"id": user_id}, error="充值金额必须为正数")
+
+    # 金额上限校验
+    if amount_int > 100000:
+        return render_template("profile.html",
+            profile_user={"id": user_id}, error="单次充值上限为100000")
+
+    conn = sqlite3.connect("data/users.db")
+    c = conn.cursor()
+
+    # 查询当前余额，确保不会为负
+    c.execute("SELECT balance FROM users WHERE id = ?", (user_id,))
+    row = c.fetchone()
+    if row:
+        current_balance = row[0]
+        new_balance = current_balance + amount_int
+        if new_balance < 0:
+            conn.close()
+            return render_template("profile.html",
+                profile_user={"id": user_id}, error="余额不足")
+
+    c.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (amount_int, user_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("profile", user_id=user_id))
+
+
+@app.route("/report05")
+def report05():
+    return send_file("day05_security_report.html")
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@
                 <li><span class="info-label">余额：</span>{{ user.balance }}</li>
             </ul>
             <div style="margin-top:16px;">
+                <a href="/profile?user_id={{ session.get('user_id', 1) }}" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">👤 个人中心</a>
                 <a href="/upload" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">📤 上传头像</a>
             </div>
         </div>

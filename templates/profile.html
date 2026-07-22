@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <h2 class="card-title">个人中心</h2>
+
+    {% if error %}
+        <div class="upload-error">
+            <p style="color: #d32f2f; margin-top: 16px;">{{ error }}</p>
+        </div>
+    {% endif %}
+
+    {% if profile_user %}
+    <div class="user-info">
+        <h3>用户资料</h3>
+        <ul class="info-list">
+            <li><span class="info-label">用户ID：</span>{{ profile_user.id }}</li>
+            <li><span class="info-label">用户名：</span>{{ profile_user.username }}</li>
+            <li><span class="info-label">邮箱：</span>{{ profile_user.email }}</li>
+            <li><span class="info-label">手机：</span>{{ profile_user.phone }}</li>
+            <li><span class="info-label">角色：</span>{{ profile_user.role }}</li>
+            <li><span class="info-label" style="font-weight:bold;">余额：</span><strong>{{ profile_user.balance }}</strong></li>
+        </ul>
+    </div>
+
+    <div class="card" style="margin-top:24px; background:#f9fafb;">
+        <h3 style="font-size:16px; color:#333; margin-bottom:12px;">充值</h3>
+        <form method="POST" action="/recharge" class="search-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="user_id" value="{{ profile_user.id }}">
+
+            <div class="upload-group">
+                <label for="amount" class="upload-label">充值金额：</label>
+                <input type="number" id="amount" name="amount" class="search-input" placeholder="请输入金额" required style="width:200px;">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;">确认充值</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:24px; text-align:center;">
+        <a href="/" class="btn btn-secondary">返回首页</a>
+    </div>
+</div>
+{% endblock %}
