@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day06 文件包含漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fef3f2; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #dc2626 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #fbbf24; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; font-weight: 600; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(220, 38, 38, 0.06); }
+        .section h2 { font-size: 20px; color: #991b1b; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #fecaca; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.critical { background: #fef2f2; border: 1px solid #fecaca; }
+        .stat-card.high { background: #fff7ed; border: 1px solid #fed7aa; }
+        .stat-card.all { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.critical .stat-number { color: #dc2626; }
+        .stat-card.high .stat-number { color: #ea580c; }
+        .stat-card.all .stat-number { color: #16a34a; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #fecaca; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #fef2f2; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-critical { background: #fecaca; color: #991b1b; }
+        .severity-high { background: #fed7aa; color: #9a3412; }
+        .status-fixed { background: #bbf7d0; color: #166534; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #166534; margin-top: 16px; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fef2f2; }
+        .feature-list li:before { content: "✦ "; color: #dc2626; font-weight: bold; }
+        .alert-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #991b1b; margin-top: 16px; }
+        .alert-box strong { color: #dc2626; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 06 安全审计</span>
+        <h1>🛡️ 文件包含漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · 路径穿越 / LFI / SSH私钥泄露安全加固</p>
+        <span class="badge">⚠️ 2 项严重漏洞已全部修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card critical"><div class="stat-number">2</div><div class="stat-label">🔴 严重漏洞</div></div>
+            <div class="stat-card high"><div class="stat-number">3</div><div class="stat-label">🛡️ 层防护</div></div>
+            <div class="stat-card all"><div class="stat-number">11</div><div class="stat-label">✅ 验证通过</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对新增的动态页面加载功能（/page 路由）进行深度安全检测，发现路径穿越导致任意文件读取漏洞，可泄露 <code>/etc/shadow</code>、<code>~/.ssh/id_rsa</code>、应用源码等全部服务器敏感文件。所有漏洞均已完成修复并通过 11 项验证测试。</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 涉及功能范围</h2>
+        <ul class="feature-list">
+            <li>动态页面加载功能（/page 路由，GET 请求）</li>
+            <li>文件路径拼装与读取逻辑</li>
+            <li>pages/ 目录下的静态页面文件</li>
+            <li>SSH 密钥文件安全（~/.ssh/ 目录）</li>
+            <li>服务器系统敏感文件（/etc/passwd、/etc/shadow）</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:180px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>FL-01 路径穿越 · 任意文件读取 (LFI)</strong><br><span style="font-size:12px; color:#999;">/page 路由未校验用户输入，可读取服务器任意文件</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>添加<strong>三层防护机制</strong>：① 入口过滤层：禁止 <code>..</code> 和绝对路径；② 路径规范层：<code>os.path.realpath()</code> 解析规范化路径；③ 目录限制层：<code>startswith(pages_dir)</code> 确保文件在 <code>pages/</code> 目录内。使用 <code>os.path.isfile()</code> 防止目录/符号链接绕过。</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>FL-02 SSH 私钥泄露 · 系统完全沦陷</strong><br><span style="font-size:12px; color:#999;">通过 FL-01 读取 ~/.ssh/id_rsa，获取服务器 root 权限</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 严重</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>此漏洞是 FL-01 的直接利用方式。修复 FL-01 后，<code>/root/.ssh/id_rsa</code>、<code>github_deploy</code>、<code>authorized_keys</code> 等全部 SSH 文件均无法访问。<strong>建议事后更换密钥对</strong>并部署 fail2ban 等防护。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎯 FL-02 攻击链详解</h2>
+        <p style="font-size:14px; color:#666; margin-bottom:20px;">
+            FL-02 并非独立漏洞，而是 FL-01 路径穿越的<strong>最高危利用方式</strong>——将"信息泄露"升级为"服务器完全沦陷"：
+        </p>
+        <table>
+            <thead><tr><th style="width:30px">步骤</th><th>操作</th><th>Payload / 命令</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>①</td>
+                    <td><strong>发现 SSH 私钥</strong></td>
+                    <td><code>/page?name=/root/.ssh/id_rsa</code> → 页面回显完整 RSA 私钥</td>
+                </tr>
+                <tr>
+                    <td>②</td>
+                    <td><strong>保存私钥文件</strong></td>
+                    <td>复制私钥内容 → 保存为 <code>stolen_key</code> → <code>chmod 600 stolen_key</code></td>
+                </tr>
+                <tr>
+                    <td>③</td>
+                    <td><strong>SSH 免密登录</strong></td>
+                    <td><code>ssh -i stolen_key root@&lt;IP&gt;</code> → 无需密码获取 root shell</td>
+                </tr>
+                <tr>
+                    <td>④</td>
+                    <td><strong>完全控制系统</strong></td>
+                    <td>窃取数据 / 篡改配置 / 部署后门 / 横向移动 / 清除日志</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="alert-box">
+            <strong>⚠ 极高风险：</strong>服务器上实际存在 5 个 SSH 相关文件（<code>id_rsa</code>、<code>id_rsa.pub</code>、<code>github_deploy</code>、<code>authorized_keys</code>、<code>known_hosts</code>），均可通过 FL-01 路径穿越一次性全部窃取。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📂 漏洞可读取的敏感文件清单</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th>目标文件</th><th style="width:200px">攻击 Payload</th><th>危害说明</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>/etc/shadow</td><td><code>/etc/shadow</code></td><td>系统所有用户密码哈希泄露</td></tr>
+                <tr><td>2</td><td>/root/.ssh/id_rsa</td><td><code>/root/.ssh/id_rsa</code></td><td>SSH私钥泄露 → 系统完全沦陷</td></tr>
+                <tr><td>3</td><td>/root/.ssh/github_deploy</td><td><code>/root/.ssh/github_deploy</code></td><td>GitHub部署密钥泄露</td></tr>
+                <tr><td>4</td><td>/root/.ssh/authorized_keys</td><td><code>/root/.ssh/authorized_keys</code></td><td>SSH已授权公钥泄露</td></tr>
+                <tr><td>5</td><td>/etc/passwd</td><td><code>../../../../etc/passwd</code></td><td>系统用户账户信息泄露</td></tr>
+                <tr><td>6</td><td>app.py</td><td><code>../app.py</code></td><td>源码泄露，含SECRET_KEY</td></tr>
+                <tr><td>7</td><td>data/users.db</td><td><code>../data/users.db</code></td><td>用户密码哈希泄露</td></tr>
+                <tr><td>8</td><td>templates/*.html</td><td><code>../templates/login.html</code></td><td>模板源码泄露</td></tr>
+                <tr><td>9</td><td>day02_security_report</td><td><code>../day02_security_report</code></td><td>历史安全报告泄露</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+
+        <h3 style="font-size:15px; color:#991b1b; margin-bottom:8px;">🛡️ 入口过滤 + realpath 规范化 + 目录前缀校验</h3>
+        <pre><code><span class="diff-remove">- @app.route("/page")</span>
+<span class="diff-remove">- def page():</span>
+<span class="diff-remove">-     name = request.args.get("name", "")</span>
+<span class="diff-remove">-     file_path = os.path.join("pages", name)   # 直接拼接，无校验</span>
+<span class="diff-remove">-     if os.path.exists(file_path):</span>
+<span class="diff-remove">-         with open(file_path, "r", ...) as f:   # 可读取 /etc/shadow</span>
+<span class="diff-remove">-             page_content = f.read()</span>
+
+<span class="diff-add">+ @app.route("/page")</span>
+<span class="diff-add">+ def page():</span>
+<span class="diff-add">+     name = request.args.get("name", "")</span>
+<span class="diff-add">+     # ✅ 第一层：入口过滤 — 禁止 ../ 和绝对路径</span>
+<span class="diff-add">+     if ".." in name or name.startswith("/") or name.startswith("\\"):</span>
+<span class="diff-add">+         page_content = "页面不存在"</span>
+<span class="diff-add">+         return render_template("index.html", ...)</span>
+<span class="diff-add">+     # ✅ 第二层：路径规范化 — realpath 消除符号链接</span>
+<span class="diff-add">+     pages_dir = os.path.realpath("pages")</span>
+<span class="diff-add">+     file_path = os.path.realpath(os.path.join("pages", name))</span>
+<span class="diff-add">+     # ✅ 第三层：目录前缀校验 — 确保文件在 pages/ 内</span>
+<span class="diff-add">+     if not file_path.startswith(pages_dir):</span>
+<span class="diff-add">+         page_content = "页面不存在"</span>
+<span class="diff-add">+         return render_template("index.html", ...)</span>
+<span class="diff-add">+     # ✅ 文件类型校验 — 防止目录/符号链接绕过</span>
+<span class="diff-add">+     if os.path.exists(file_path) and os.path.isfile(file_path):</span>
+<span class="diff-add">+         with open(file_path, "r", ...) as f:</span>
+<span class="diff-add">+             page_content = f.read()</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">🔗 .html 后缀回退逻辑同样加固</h3>
+        <pre><code><span class="diff-remove">- file_path_html = os.path.join("pages", name + ".html")</span>
+<span class="diff-remove">- if os.path.exists(file_path_html):</span>
+
+<span class="diff-add">+ file_path_html = os.path.realpath(os.path.join("pages", name + ".html"))</span>
+<span class="diff-add">+ if file_path_html.startswith(pages_dir) and os.path.exists(file_path_html) and os.path.isfile(file_path_html):</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 修复验证测试</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:100px">预期结果</th><th style="width:70px">结果</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>正常访问帮助页 help</td><td>显示帮助中心</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>路径穿越 ../app.py</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>路径穿越 ../../../../etc/passwd</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>绝对路径 /etc/shadow</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>绝对路径 /etc/hostname</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>FL-02: SSH私钥 /root/.ssh/id_rsa</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>FL-02: SSH公钥 /root/.ssh/id_rsa.pub</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>8</td><td>FL-02: GitHub密钥 github_deploy</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>9</td><td>FL-02: authorized_keys</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>10</td><td>数据库 ../data/users.db</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>11</td><td>不存在的页面 nonexistent</td><td>页面不存在</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>app.py</td>
+                    <td>
+                        • <code>/page</code> 路由添加 3 层防护机制<br>
+                        • 入口过滤：禁止 <code>..</code> 和 <code>/</code> 开头的路径<br>
+                        • realpath 规范化：<code>os.path.realpath()</code> 消除符号链接<br>
+                        • 目录前缀校验：<code>startswith(pages_dir)</code><br>
+                        • 文件类型校验：<code>os.path.isfile()</code> 防止目录/符号链接绕过<br>
+                        • <code>.html</code> 后缀回退逻辑同样加固
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔄 修复前后对比</h2>
+        <table>
+            <thead><tr><th>攻击场景</th><th style="width:120px">修复前</th><th style="width:120px">修复后</th></tr></thead>
+            <tbody>
+                <tr><td>读取 /etc/passwd</td><td><span class="severity-tag severity-critical">🔴 可直接读取</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>读取 /etc/shadow</td><td><span class="severity-tag severity-critical">🔴 密码哈希泄露</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>读取 ~/.ssh/id_rsa</td><td><span class="severity-tag severity-critical">🔴 系统完全沦陷</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>读取 ~/.ssh/github_deploy</td><td><span class="severity-tag severity-critical">🔴 部署密钥泄露</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>读取 app.py 源码</td><td><span class="severity-tag severity-high">🟠 SECRET_KEY泄露</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>读取 data/users.db</td><td><span class="severity-tag severity-high">🟠 用户数据泄露</span></td><td><span class="status-tag status-fixed">✅ 页面不存在</span></td></tr>
+                <tr><td>正常页面 help</td><td><span class="status-tag status-fixed">✅ 正常</span></td><td><span class="status-tag status-fixed">✅ 正常</span></td></tr>
+                <tr><td>不存在的页面</td><td><span class="status-tag status-fixed">✅ 提示不存在</span></td><td><span class="status-tag status-fixed">✅ 提示不存在</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>💡 安全建议</h2>
+        <div class="footnote">
+            <strong>🔒 额外安全措施建议：</strong><br><br>
+            1. <strong>更换 SSH 密钥对</strong>：立即使用 <code>ssh-keygen -t ed25519</code> 重新生成密钥对，移除旧的公钥授权<br>
+            2. <strong>加固 SSH 配置</strong>：禁止 root SSH 登录（<code>PermitRootLogin no</code>），限制 AllowUsers<br>
+            3. <strong>部署 fail2ban</strong>：配置 SSH 暴力破解防护，自动封禁异常 IP<br>
+            4. <strong>页面名称白名单</strong>：限制 /page 路由仅允许预定义的页面名称<br>
+            5. <strong>请求日志审计</strong>：记录所有 /page 请求的完整 URL 参数，便于事后追溯<br>
+            6. <strong>WAF 防护</strong>：部署 Web 应用防火墙拦截路径穿越攻击特征
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025<br>
+            🔗 <a href="/report02" style="color:#166534;">查看 Day02 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report03" style="color:#166534;">查看 Day03 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report05" style="color:#166534;">查看 Day05 安全报告</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

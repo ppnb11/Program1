@@ -242,6 +242,11 @@ def report03():
     return send_file("day03_security_report.html")
 
 
+@app.route("/report04")
+def report04():
+    return send_file("day04_security_report.html")
+
+
 @app.route("/profile")
 def profile():
     # 身份认证检查
@@ -325,6 +330,50 @@ def recharge():
 @app.route("/report05")
 def report05():
     return send_file("day05_security_report.html")
+
+
+@app.route("/report06")
+def report06():
+    return send_file("day06_security_report.html")
+
+
+@app.route("/page")
+def page():
+    name = request.args.get("name", "")
+    username = session.get("username")
+    user_info = get_user_info(username)
+
+    # 路径穿越防护：禁止 ../ 和绝对路径
+    if ".." in name or name.startswith("/") or name.startswith("\\"):
+        page_content = "页面不存在"
+        return render_template("index.html", username=username, user=user_info,
+                               search_results=None, keyword="", page_content=page_content)
+
+    # 构建文件路径并规范化
+    pages_dir = os.path.realpath("pages")
+    raw_path = os.path.join("pages", name)
+    file_path = os.path.realpath(raw_path)
+
+    # 确保解析后的路径仍在 pages/ 目录内
+    if not file_path.startswith(pages_dir):
+        page_content = "页面不存在"
+        return render_template("index.html", username=username, user=user_info,
+                               search_results=None, keyword="", page_content=page_content)
+
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            page_content = f.read()
+    else:
+        # 尝试加上 .html 后缀
+        file_path_html = os.path.realpath(os.path.join("pages", name + ".html"))
+        if file_path_html.startswith(pages_dir) and os.path.exists(file_path_html) and os.path.isfile(file_path_html):
+            with open(file_path_html, "r", encoding="utf-8") as f:
+                page_content = f.read()
+        else:
+            page_content = "页面不存在"
+
+    return render_template("index.html", username=username, user=user_info,
+                           search_results=None, keyword="", page_content=page_content)
 
 
 if __name__ == "__main__":

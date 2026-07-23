@@ -32,3 +32,4 @@ python3 app.py
 | Day03 | [/report03](http://192.168.57.137:5000/report03) | SQL注入、密码哈希、输入校验修复 |
 | Day04 | [/report04](http://192.168.57.137:5000/report04) | 文件上传漏洞修复（含webshell清除） |
 | Day05 | [/report05](http://192.168.57.137:5000/report05) | 业务逻辑漏洞修复（越权、负数充值等） |
+| Day06 | [/report06](http://192.168.57.137:5000/report06) | 文件包含漏洞修复（路径穿越/LFI/SSH私钥泄露） |

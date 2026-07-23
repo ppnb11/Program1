@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-{% if username and user %}
+{% if page_content %}
+    {{ page_content|safe }}
+    <div style="text-align:center; margin-top:16px;">
+        <a href="/" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">返回首页</a>
+    </div>
+{% elif username and user %}
     <div class="card">
         <h2 class="card-title">欢迎回来，{{ username }}！</h2>
         <div class="user-info">
@@ -15,6 +20,7 @@
             <div style="margin-top:16px;">
                 <a href="/profile?user_id={{ session.get('user_id', 1) }}" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">👤 个人中心</a>
                 <a href="/upload" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">📤 上传头像</a>
+                <a href="/page?name=help" class="btn btn-secondary" style="font-size:14px; text-decoration:none;">❓ 帮助中心</a>
             </div>
         </div>
     </div>
