@@ -327,6 +327,57 @@ def recharge():
     return redirect(url_for("profile", user_id=user_id))
 
 
+@app.route("/change-password", methods=["POST"])
+def change_password():
+    # 身份认证检查
+    session_username = session.get("username")
+    if not session_username:
+        return redirect(url_for("login"))
+
+    old_password = request.form.get("old_password", "")
+    new_password = request.form.get("new_password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    if not old_password or not new_password or not confirm_password:
+        return "缺少必填字段", 400
+
+    # 确认密码一致性校验
+    if new_password != confirm_password:
+        error_msg = "两次输入的密码不一致"
+        return render_template("profile.html", profile_user={"id": session.get("user_id"), "username": session_username},
+                               error=error_msg)
+
+    # 密码强度校验
+    err = validate_password(new_password)
+    if err:
+        return render_template("profile.html", profile_user={"id": session.get("user_id"), "username": session_username},
+                               error=err)
+
+    # 只允许修改自己的密码（username 从 session 获取，不信任表单参数）
+    conn = sqlite3.connect("data/users.db")
+    c = conn.cursor()
+    c.execute("SELECT password, id, username, email, phone, role, balance FROM users WHERE username = ?", (session_username,))
+    row = c.fetchone()
+
+    if not row:
+        conn.close()
+        return render_template("profile.html", profile_user=None, error="用户不存在")
+
+    # 验证原密码
+    if not check_password_hash(row[0], old_password):
+        conn.close()
+        user_data = {"id": row[1], "username": row[2]}
+        return render_template("profile.html", profile_user=user_data, error="原密码错误")
+
+    # 更新密码
+    hashed_pw = generate_password_hash(new_password)
+    c.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_pw, session_username))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("profile", user_id=session.get("user_id")))
+
+
 @app.route("/report05")
 def report05():
     return send_file("day05_security_report.html")
@@ -335,6 +386,11 @@ def report05():
 @app.route("/report06")
 def report06():
     return send_file("day06_security_report.html")
+
+
+@app.route("/report07")
+def report07():
+    return send_file("day07_security_report.html")
 
 
 @app.route("/page")

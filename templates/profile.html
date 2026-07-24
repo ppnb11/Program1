@@ -38,6 +38,26 @@
     </div>
     {% endif %}
 
+    <div class="card" style="margin-top:24px; background:#f9fafb;">
+        <h3 style="font-size:16px; color:#333; margin-bottom:12px;">修改密码</h3>
+        <form method="POST" action="/change-password" class="search-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="upload-group">
+                <label for="old_password" class="upload-label">原密码：</label>
+                <input type="password" id="old_password" name="old_password" class="search-input" placeholder="请输入原密码" required style="width:200px;">
+            </div>
+            <div class="upload-group">
+                <label for="new_password" class="upload-label">新密码：</label>
+                <input type="password" id="new_password" name="new_password" class="search-input" placeholder="请输入新密码" required style="width:200px;">
+            </div>
+            <div class="upload-group">
+                <label for="confirm_password" class="upload-label">确认密码：</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="search-input" placeholder="请再次输入新密码" required style="width:200px;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top:12px;">修改密码</button>
+        </form>
+    </div>
+
     <div style="margin-top:24px; text-align:center;">
         <a href="/" class="btn btn-secondary">返回首页</a>
     </div>

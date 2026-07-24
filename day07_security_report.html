@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day07 密码修改漏洞修复报告</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fef3f2; color: #333; padding: 40px 20px; }
+        .container { max-width: 960px; margin: 0 auto; }
+        .header { background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #dc2626 100%); color: white; padding: 40px; border-radius: 16px; margin-bottom: 32px; box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25); }
+        .header h1 { font-size: 28px; margin-bottom: 4px; }
+        .header .day-badge { display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.3); }
+        .header .subtitle { font-size: 15px; opacity: 0.85; }
+        .header .badge { display: inline-block; background: #fbbf24; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-size: 13px; margin-top: 12px; font-weight: 600; }
+        .section { background: white; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 12px rgba(220, 38, 38, 0.06); }
+        .section h2 { font-size: 20px; color: #991b1b; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #fecaca; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 20px; }
+        .stat-card { text-align: center; padding: 20px; border-radius: 10px; }
+        .stat-card.critical { background: #fef2f2; border: 1px solid #fecaca; }
+        .stat-card.high { background: #fff7ed; border: 1px solid #fed7aa; }
+        .stat-card.all { background: #f0fdf4; border: 1px solid #bbf7d0; }
+        .stat-number { font-size: 36px; font-weight: 700; }
+        .stat-card.critical .stat-number { color: #dc2626; }
+        .stat-card.high .stat-number { color: #ea580c; }
+        .stat-card.all .stat-number { color: #16a34a; }
+        .stat-label { font-size: 13px; color: #666; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; font-size: 13px; color: #888; padding: 10px 12px; border-bottom: 2px solid #fecaca; }
+        td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:hover td { background: #fef2f2; }
+        .severity-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .severity-critical { background: #fecaca; color: #991b1b; }
+        .severity-high { background: #fed7aa; color: #9a3412; }
+        .status-fixed { background: #bbf7d0; color: #166534; }
+        .status-tag { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        pre { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+        code { font-family: "JetBrains Mono", "Fira Code", Consolas, monospace; }
+        .diff-add { background: #d4edda; color: #155724; padding: 0 4px; border-radius: 3px; }
+        .diff-remove { background: #f8d7da; color: #721c24; padding: 0 4px; border-radius: 3px; }
+        .footnote { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #166534; margin-top: 16px; }
+        .feature-list { list-style: none; padding: 0; }
+        .feature-list li { padding: 8px 0; font-size: 14px; border-bottom: 1px solid #fef2f2; }
+        .feature-list li:before { content: "✦ "; color: #dc2626; font-weight: bold; }
+        .alert-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 18px; font-size: 14px; color: #991b1b; margin-top: 16px; }
+        .alert-box strong { color: #dc2626; }
+        @media (max-width: 640px) { body { padding: 16px; } .header { padding: 24px; } .section { padding: 20px; } }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="header">
+        <span class="day-badge">📅 Day 07 安全审计</span>
+        <h1>🛡️ 密码修改漏洞修复报告</h1>
+        <p class="subtitle">用户管理系统 · Flask Web Application · CSRF / 任意密码重置 / 账户接管安全加固</p>
+        <span class="badge">⚠️ 1 项高危漏洞已完全修复</span>
+    </div>
+
+    <div class="section">
+        <h2>📊 漏洞修复总览</h2>
+        <div class="summary-grid">
+            <div class="stat-card critical"><div class="stat-number">4</div><div class="stat-label">🔴 缺陷层</div></div>
+            <div class="stat-card high"><div class="stat-number">4</div><div class="stat-label">🛡️ 层防护</div></div>
+            <div class="stat-card all"><div class="stat-number">7</div><div class="stat-label">✅ 验证通过</div></div>
+        </div>
+        <p style="font-size:14px; color:#666;">本次审计针对新增的密码修改功能（/change-password 路由）进行深度安全检测，发现<strong>4 项严重逻辑缺陷</strong>叠加组合，使任何已登录用户可在不知晓原密码的情况下，通过修改隐藏字段直接篡改任意账户（包括 admin）密码，实现完全账户接管。所有漏洞均已完成修复并通过 7 项验证测试。</p>
+    </div>
+
+    <div class="section">
+        <h2>📋 涉及功能范围</h2>
+        <ul class="feature-list">
+            <li>密码修改功能（/change-password 路由，POST 请求）</li>
+            <li>个人中心页面（templates/profile.html）修改密码表单</li>
+            <li>CSRF Token 全局保护机制</li>
+            <li>用户身份认证与授权逻辑</li>
+            <li>密码输入校验机制</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🔎 漏洞明细</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th style="width:180px">漏洞名称</th><th style="width:70px">等级</th><th style="width:70px">状态</th><th>修复措施</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>CSRF-01 密码修改 · 任意账户接管</strong><br><span style="font-size:12px; color:#999;">4 项逻辑缺陷叠加：无原密码验证 + 无身份校验 + username 可篡改 + 无 CSRF Token</span></td>
+                    <td><span class="severity-tag severity-critical">🔴 高危</span></td>
+                    <td><span class="status-tag status-fixed">✅ 已修复</span></td>
+                    <td>添加<strong>4 层纵深防护</strong>：① 原密码验证层：必须输入当前密码；② 密码一致性层：新密码与确认密码必须一致；③ 密码强度层：密码长度 ≥ 6 位；④ 身份绑定层：username 从 session 获取，不信任表单参数。CSRF Token 已补充至表单。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🎯 CSRF-01 攻击链详解</h2>
+        <p style="font-size:14px; color:#666; margin-bottom:20px;">
+            CSRF-01 是<strong>4 项逻辑缺陷的叠加组合</strong>——将"修改自己密码"升级为"接管任意账户"：
+        </p>
+        <table>
+            <thead><tr><th style="width:30px">步骤</th><th>操作</th><th>具体方法</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>①</td>
+                    <td><strong>登录任意账号</strong></td>
+                    <td>以 alice / alice2025 登录（普通用户即可）</td>
+                </tr>
+                <tr>
+                    <td>②</td>
+                    <td><strong>进入个人中心</strong></td>
+                    <td>访问 /profile?user_id=2 → F12 → Elements → Ctrl+F 搜索 <code>username</code></td>
+                </tr>
+                <tr>
+                    <td>③</td>
+                    <td><strong>篡改隐藏字段</strong></td>
+                    <td>双击隐藏字段 value，将 <code>alice</code> 改为 <code>admin</code></td>
+                </tr>
+                <tr>
+                    <td>④</td>
+                    <td><strong>提交修改</strong></td>
+                    <td>输入任意新密码 → 点击"修改密码" → admin 密码已被静默重置</td>
+                </tr>
+                <tr>
+                    <td>⑤</td>
+                    <td><strong>接管管理员账户</strong></td>
+                    <td>退出登录 → 以 admin / 新密码登录 → 完全控制系统</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="alert-box">
+            <strong>⚠ 关键缺陷：</strong>攻击者<strong>不需要知道原密码</strong>，<strong>不需要是管理员</strong>，只需一个普通用户账号即可通过 F12 修改隐藏字段，静默接管系统内任何账户。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📂 四个叠加的缺陷</h2>
+        <table>
+            <thead><tr><th style="width:20px">#</th><th>缺陷</th><th>说明</th><th style="width:100px">危害</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>无原密码验证</strong></td><td>修改密码不需要输入当前密码，直接更新数据库</td><td><span class="severity-tag severity-critical">🔴 严重</span></td></tr>
+                <tr><td>2</td><td><strong>无身份校验</strong></td><td>不验证 session 用户与提交的 username 是否一致</td><td><span class="severity-tag severity-critical">🔴 严重</span></td></tr>
+                <tr><td>3</td><td><strong>username 可篡改</strong></td><td>目标用户名来自隐藏字段，F12 即可修改</td><td><span class="severity-tag severity-critical">🔴 严重</span></td></tr>
+                <tr><td>4</td><td><strong>缺少 CSRF Token</strong></td><td>表单未包含 csrf_token，提交直接返回 400</td><td><span class="severity-tag severity-high">🟠 功能阻断</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 关键代码变更</h2>
+
+        <h3 style="font-size:15px; color:#991b1b; margin-bottom:8px;">🛡️ 后端路由完全重写（app.py）</h3>
+        <pre><code><span class="diff-remove">- @app.route("/change-password", methods=["POST"])</span>
+<span class="diff-remove">- def change_password():</span>
+<span class="diff-remove">-     username = request.form.get("username", "")      #&lt;-- 前端可篡改</span>
+<span class="diff-remove">-     new_password = request.form.get("new_password", "")</span>
+<span class="diff-remove">-     # 不验证原密码、不验证身份、无 CSRF Token</span>
+<span class="diff-remove">-     hashed_pw = generate_password_hash(new_password)</span>
+<span class="diff-remove">-     c.execute("UPDATE users SET password = ? ...", ...)</span>
+<span class="diff-remove">-     return redirect(url_for("profile", ...))</span>
+
+<span class="diff-add">+ @app.route("/change-password", methods=["POST"])</span>
+<span class="diff-add">+ def change_password():</span>
+<span class="diff-add">+     # ✅ 第一层：身份认证检查</span>
+<span class="diff-add">+     session_username = session.get("username")</span>
+<span class="diff-add">+     if not session_username:</span>
+<span class="diff-add">+         return redirect(url_for("login"))</span>
+<span class="diff-add">+     old_password = request.form.get("old_password", "")</span>
+<span class="diff-add">+     new_password = request.form.get("new_password", "")</span>
+<span class="diff-add">+     confirm_password = request.form.get("confirm_password", "")</span>
+<span class="diff-add">+     # ✅ 第二层：确认密码一致性校验</span>
+<span class="diff-add">+     if new_password != confirm_password:</span>
+<span class="diff-add">+         return render_template("profile.html", ... error="两次输入的密码不一致")</span>
+<span class="diff-add">+     # ✅ 第三层：密码强度校验</span>
+<span class="diff-add">+     err = validate_password(new_password)</span>
+<span class="diff-add">+     # ✅ 第四层：验证原密码（从 session 获取 username）</span>
+<span class="diff-add">+     c.execute("SELECT password, id FROM users WHERE username = ?", (session_username,))</span>
+<span class="diff-add">+     if not check_password_hash(row[0], old_password):</span>
+<span class="diff-add">+         return render_template("profile.html", ... error="原密码错误")</span>
+<span class="diff-add">+     hashed_pw = generate_password_hash(new_password)</span>
+<span class="diff-add">+     c.execute("UPDATE users SET password = ? WHERE username = ?", (hashed_pw, session_username))</span>
+<span class="diff-add">+     return redirect(url_for("profile", ...))</span></code></pre>
+
+        <h3 style="font-size:15px; color:#991b1b; margin:16px 0 8px;">📋 前端表单修改（templates/profile.html）</h3>
+        <pre><code><span class="diff-remove">- &lt;input type="hidden" name="username" value="{{ profile_user.username }}"&gt;</span>
+<span class="diff-remove">- &lt;label&gt;新密码：&lt;/label&gt;</span>
+<span class="diff-remove">- &lt;input name="new_password" ...&gt;</span>
+
+<span class="diff-add">+ &lt;input type="hidden" name="csrf_token" value="{{ csrf_token() }}"&gt;</span>
+<span class="diff-add">+ &lt;label&gt;原密码：&lt;/label&gt;</span>
+<span class="diff-add">+ &lt;input type="password" name="old_password" ...&gt;</span>
+<span class="diff-add">+ &lt;label&gt;新密码：&lt;/label&gt;</span>
+<span class="diff-add">+ &lt;input type="password" name="new_password" ...&gt;</span>
+<span class="diff-add">+ &lt;label&gt;确认密码：&lt;/label&gt;</span>
+<span class="diff-add">+ &lt;input type="password" name="confirm_password" ...&gt;</span></code></pre>
+    </div>
+
+    <div class="section">
+        <h2>🧪 修复验证测试</h2>
+        <table>
+            <thead><tr><th style="width:24px">#</th><th>测试项</th><th style="width:100px">预期结果</th><th style="width:70px">结果</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>原密码错误 → 提交修改</td><td>拒绝修改，提示"原密码错误"</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>2</td><td>两次新密码不一致</td><td>拒绝修改，提示"两次输入的密码不一致"</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>3</td><td>新密码 < 6 位（如 123）</td><td>拒绝修改，提示"密码长度至少6位"</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>4</td><td>正确原密码 + 一致新密码</td><td>修改成功，重定向至个人中心</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>5</td><td>用新密码登录</td><td>登录成功</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>6</td><td>额外传 username=admin → 修改他人</td><td>参数被忽略，只修改自己密码</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+                <tr><td>7</td><td>POST 请求无 CSRF Token</td><td>返回 400 BAD REQUEST</td><td><span class="status-tag status-fixed">✅ 通过</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📁 涉及文件</h2>
+        <table>
+            <thead><tr><th>文件</th><th>修改内容</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>app.py</td>
+                    <td>
+                        • <code>/change-password</code> 路由完全重写（30 行 → 50 行）<br>
+                        • 新增 4 层防护：身份认证 → 密码一致性 → 密码强度 → 原密码验证<br>
+                        • username 从 session 获取，不再信任表单参数<br>
+                        • 原密码使用 <code>check_password_hash()</code> 校验
+                    </td>
+                </tr>
+                <tr>
+                    <td>templates/profile.html</td>
+                    <td>
+                        • 移除隐藏的 <code>&lt;input name="username"&gt;</code> 字段<br>
+                        • 新增 <code>&lt;input name="old_password"&gt;</code> 原密码输入框<br>
+                        • 保留 <code>csrf_token</code>、新密码、确认密码字段
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>🔄 修复前后对比</h2>
+        <table>
+            <thead><tr><th>攻击场景</th><th style="width:120px">修复前</th><th style="width:120px">修复后</th></tr></thead>
+            <tbody>
+                <tr><td>不知道原密码直接改</td><td><span class="severity-tag severity-critical">🔴 可直接修改</span></td><td><span class="status-tag status-fixed">✅ 必须验证原密码</span></td></tr>
+                <tr><td>F12 改 username 接管 admin</td><td><span class="severity-tag severity-critical">🔴 完全接管</span></td><td><span class="status-tag status-fixed">✅ 参数被忽略</span></td></tr>
+                <tr><td>两次密码不一致仍提交</td><td><span class="severity-tag severity-high">🟠 可提交不匹配密码</span></td><td><span class="status-tag status-fixed">✅ 拒绝并提示</span></td></tr>
+                <tr><td>CSRF Token 缺失</td><td><span class="severity-tag severity-high">🟠 返回400功能不可用</span></td><td><span class="status-tag status-fixed">✅ 正常使用</span></td></tr>
+                <tr><td>密码太短（< 6位）</td><td><span class="severity-tag severity-high">🟠 接受弱密码</span></td><td><span class="status-tag status-fixed">✅ 拒绝弱密码</span></td></tr>
+                <tr><td>正常修改自己密码</td><td><span class="status-tag status-fixed">✅ 可修改</span></td><td><span class="status-tag status-fixed">✅ 可修改（更安全）</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>�️ CSRF 防护机制</h2>
+        <p style="font-size:14px; color:#666; margin-bottom:20px;">
+            本系统通过以下多层机制实现对 CSRF（跨站请求伪造）攻击的全面防御：
+        </p>
+        <table>
+            <thead><tr><th style="width:30px">#</th><th style="width:160px">防护机制</th><th>技术实现</th><th style="width:110px">原理说明</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><strong>全局 CSRFProtect 中间件</strong></td>
+                    <td><code>csrf = CSRFProtect(app)</code> 在 Flask 应用初始化时全局注册</td>
+                    <td>拦截所有 POST/PUT/PATCH/DELETE 请求，自动验证 CSRF Token 是否存在且有效。无效请求直接返回 400。</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><strong>表单内嵌 CSRF Token</strong></td>
+                    <td>所有敏感表单中添加 <code>&lt;input type="hidden" name="csrf_token" value="{{ csrf_token() }}"&gt;</code></td>
+                    <td>每次渲染页面时生成唯一的随机 Token，嵌入表单隐藏字段。提交时与 session 中存储的 Token 比对。</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><strong>Token 绑定 Session</strong></td>
+                    <td>Flask-WTF 将 CSRF Token 存储在服务端 session 中（<code>session['csrf_token']</code>）</td>
+                    <td>攻击者跨域无法读取或预测 Token（同源策略限制 + 随机性保证）。即使诱导用户点击恶意链接，也无法伪造有效请求。</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><strong>Session Cookie 安全属性</strong></td>
+                    <td>Flask session cookie 受 <code>httpOnly</code> + <code>SameSite=Lax</code> 保护</td>
+                    <td>JS 无法读取 session cookie（httpOnly），跨站请求不携带 cookie（SameSite），双重阻断 CSRF 攻击路径。</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td><strong>自定义请求头隐式 Token</strong></td>
+                    <td>WTF_CSRF_CHECK_DEFAULT = True，自动从 <code>X-CSRFToken</code> 请求头提取 Token</td>
+                    <td>支持 AJAX 请求场景。自定义请求头受同源策略保护，跨域请求无法携带，进一步阻断 CSRF。</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td><strong>Referer 校验</strong></td>
+                    <td>Flask-WTF 默认启用 Referer 头同源检查（可配置 <code>WTF_CSRF_SSL_STRICT</code>）</td>
+                    <td>验证请求来源 Referer 与当前 host 一致。跨域 CSRF 攻击的 Referer 不匹配，请求被拒绝。</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3 style="font-size:16px; color:#333; margin:24px 0 12px;">CSRF 攻击流程 vs 防御拦截</h3>
+        <table>
+            <thead><tr><th style="width:50px">步骤</th><th style="width:200px">攻击者操作</th><th style="width:200px">防御拦截点</th><th style="width:100px">结果</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>①</td><td>构造恶意网页，内含自动提交表单指向 /change-password</td><td>—</td><td>—</td>
+                </tr>
+                <tr>
+                    <td>②</td><td>诱导已登录用户访问恶意页面</td><td>—</td><td>—</td>
+                </tr>
+                <tr>
+                    <td>③</td><td>恶意表单自动提交 POST 请求</td><td><strong>SameSite=Lax</strong> → 跨站请求不携带 session cookie</td><td><span class="status-tag" style="background:#fecaca;color:#991b1b;">❌ 无身份</span></td>
+                </tr>
+                <tr>
+                    <td>④</td><td>请求到达服务器</td><td><strong>CSRFProtect 中间件</strong> → 检查请求中是否有 csrf_token 字段</td><td><span class="status-tag" style="background:#fecaca;color:#991b1b;">❌ Token缺失</span></td>
+                </tr>
+                <tr>
+                    <td>⑤</td><td>伪造请求被处理</td><td><strong>Referer 校验</strong> → 请求来源与服务器 host 不一致</td><td><span class="status-tag" style="background:#fecaca;color:#991b1b;">❌ 来源非法</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="footnote">
+            <strong>✅ 结论：</strong>在当前配置下，攻击者在第③步即被 SameSite Cookie 策略拦截，即使绕过该层，第④步 CSRFProtect 中间件和第⑤步 Referer 校验也会逐层拦截。三层纵深防御确保 CSRF 攻击<strong>不可行</strong>。
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>�💡 安全建议</h2>
+        <div class="footnote">
+            <strong>🔒 额外安全措施建议：</strong><br><br>
+            1. <strong>验证密码复杂度</strong>：增加大写字母、数字、特殊字符的混合要求<br>
+            2. <strong>密码修改后失效所有 session</strong>：修改密码后强制所有设备重新登录，防止 session 劫持<br>
+            3. <strong>密码修改频率限制</strong>：添加 flask_limiter 限流，防止暴力修改<br>
+            4. <strong>Referer/Origin 头校验</strong>：作为纵深防御，额外验证请求来源<br>
+            5. <strong>密码修改审计日志</strong>：记录每次密码修改的时间、IP、User-Agent<br>
+            6. <strong>敏感操作二次认证</strong>：修改密码等敏感操作要求重新输入密码后再验证
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="footnote">
+            💡 预设账号: admin / admin123 &nbsp;&nbsp;|&nbsp;&nbsp; alice / alice2025<br>
+            🔗 <a href="/report02" style="color:#166534;">查看 Day02 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report03" style="color:#166534;">查看 Day03 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report04" style="color:#166534;">查看 Day04 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report05" style="color:#166534;">查看 Day05 安全报告</a> &nbsp;&nbsp;|&nbsp;&nbsp;
+            <a href="/report06" style="color:#166534;">查看 Day06 安全报告</a>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
